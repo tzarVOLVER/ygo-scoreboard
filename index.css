@@ -142,7 +142,7 @@ body {
 }
 
 body {
-  background: url("/src/images/GAMEPLAY.png") no-repeat center center;
+  background: url("src/images/GAMEPLAY.png") no-repeat center center;
   background-size: 1920px 1080px;
   background-color: black;
 }
