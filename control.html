@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Scoreboard Control Surface</title>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; background: #f9f9f9; }
+    .container { display: flex; gap: 2rem; flex-wrap: wrap; }
+    .section {
+      background: #fff; border: 1px solid #ccc; padding: 1rem;
+      border-radius: 10px; width: 300px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .chip {
+      display: inline-block; padding: 0.5em 1em; margin: 0.2em;
+      border-radius: 25px; border: 1px solid #999; cursor: pointer;
+    }
+    .chip.active { background-color: #444; color: white; }
+    #timer { font-size: 2rem; margin-top: 1rem; }
+    button { margin: 0.2rem 0.1rem; }
+    input[type="text"], input[type="number"] {
+      padding: 0.5em; width: 90%; margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Scoreboard Control Surface</h1>
+  <div class="container">
+    <!-- Left Player -->
+    <div class="section" id="left">
+      <h2>Left Player</h2>
+      <input type="number" id="leftLp" placeholder="Life Points">
+      <button onclick="updateLife('left')">Submit</button>
+
+      <h3>Phase</h3>
+      <div id="leftPhases"></div>
+
+      <h3>Card Highlight</h3>
+      <input type="text" id="leftCard" placeholder="Search card..." oninput="autocompleteCard(this.value, 'left')">
+      <div id="leftSuggestions"></div>
+      <button onclick="updateCard('left')">Update</button>
+      <button id="cardFlipToggle-left">Flip Card</button>
+    </div>
+
+    <!-- Right Player -->
+    <div class="section" id="right">
+      <h2>Right Player</h2>
+      <input type="number" id="rightLp" placeholder="Life Points">
+      <button onclick="updateLife('right')">Submit</button>
+
+      <h3>Phase</h3>
+      <div id="rightPhases"></div>
+
+      <h3>Card Highlight</h3>
+      <input type="text" id="rightCard" placeholder="Search card..." oninput="autocompleteCard(this.value, 'right')">
+      <div id="rightSuggestions"></div>
+      <button onclick="updateCard('right')">Update</button>
+      <button id="cardFlipToggle-right">Flip Card</button>
+    </div>
+  </div>
+
+  <!-- Timer Display & Controls -->
+  <div id="timerControls" style="margin-top: 2rem;">
+    <div id="timer">00:00</div>
+
+    <div style="margin-top: 1rem;">
+      <button onclick="startTimer()">▶ Play</button>
+      <button onclick="pauseTimer()">⏸ Pause</button>
+      <button onclick="resetTimer()">🔁 Reset</button>
+    </div>
+
+    <div style="margin-top: 1rem;">
+      <input type="text" id="customTime" placeholder="mm:ss">
+      <button onclick="setCustomTime()">Set Time</button>
+    </div>
+
+    <div style="margin-top: 2rem;">
+      <button onclick="setShuffling()">🔄 Set to Shuffling (Clear Phase)</button>
+    </div>
+  </div>
+
+  <script>
+    const phases = [
+      "DRAW PHASE", "STANDBY PHASE", "MAIN PHASE 1",
+      "BATTLE PHASE", "MAIN PHASE 2", "END PHASE"
+    ];
+
+    const supabaseUrl = 'https://vzbwhvamfqkodiogwdww.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6YndodmFtZnFrb2Rpb2d3ZHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjI0NjM2NjgsImV4cCI6MjAzODAzOTY2OH0.ExqIbsojI2KKuA8kuu7hbIfBrSgDLLxJK1LrF_AlIfE'; 
+    const table = 'featureScoreboard';
+
+    function getRowIdForSide(side) {
+      return side === 'left' ? 1 : 2;
+    }
+
+    async function updateSupabase(field, value, side) {
+      const rowId = getRowIdForSide(side);
+      const res = await fetch(`${supabaseUrl}/rest/v1/${table}?id=eq.${rowId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ [field]: value })
+      });
+      console.log(`${field} updated for ${side}:`, res.status);
+    }
+
+    // Load brname from Supabase
+    async function loadNames() {
+      const res = await fetch(`${supabaseUrl}/rest/v1/${table}?select=id,brName`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`
+        }
+      });
+      const data = await res.json();
+      data.forEach(row => {
+        if (row.id === 1) {
+          document.querySelector("#left h2").textContent = row.brName || "Left Player";
+        } else if (row.id === 2) {
+          document.querySelector("#right h2").textContent = row.brName || "Right Player";
+        }
+      });
+    }
+
+    // Life Points
+    function updateLife(side) {
+      const val = document.getElementById(`${side}Lp`).value;
+      updateSupabase(`lifePoints`, parseInt(val), side);
+    }
+
+    // Phase Chips
+    function renderPhaseChips(side) {
+      const container = document.getElementById(`${side}Phases`);
+      phases.forEach(phase => {
+        const chip = document.createElement('span');
+        chip.textContent = phase;
+        chip.className = 'chip';
+        chip.onclick = () => {
+          Array.from(container.children).forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          updateSupabase(`phase`, phase, side);
+        };
+        container.appendChild(chip);
+      });
+    }
+
+    const cardFlippedStates = {
+  left: false,
+  right: false
+};
+
+async function toggleCardFlip(side) {
+  const newState = !cardFlippedStates[side];
+  cardFlippedStates[side] = newState;
+
+  await updateSupabase('cardFlipped', newState, side);
+
+  const btn = document.getElementById(`cardFlipToggle-${side}`);
+  btn.textContent = newState ? "Hide Card" : "Flip Card";
+}
+
+    // Card Autocomplete
+    async function autocompleteCard(query, side) {
+      if (!query) return;
+      const res = await fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      const suggestions = (data.data || []).slice(0, 5).map(card => card.name);
+      const box = document.getElementById(`${side}Suggestions`);
+      box.innerHTML = suggestions.map(s =>
+        `<div onclick='selectCard(${JSON.stringify(side)}, ${JSON.stringify(s)})'>${s}</div>`
+      ).join('');
+    }
+
+    function selectCard(side, cardName) {
+      document.getElementById(`${side}Card`).value = cardName;
+      document.getElementById(`${side}Suggestions`).innerHTML = '';
+    }
+
+    function updateCard(side) {
+      const val = document.getElementById(`${side}Card`).value;
+      updateSupabase(`card_highlight`, val, side);
+    }
+
+    // Timer
+    let timerInterval;
+    let secondsElapsed = 0;
+
+    function updateTimerDisplay() {
+      const minutes = Math.floor(secondsElapsed / 60);
+      const seconds = secondsElapsed % 60;
+      document.getElementById('timer').textContent =
+        `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        secondsElapsed++;
+        updateTimerDisplay();
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      clearInterval(timerInterval);
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      secondsElapsed = 0;
+      updateTimerDisplay();
+    }
+
+    function setCustomTime() {
+      const input = document.getElementById('customTime').value.trim();
+      const match = input.match(/^(\d+):([0-5]?\d)$/);
+      if (match) {
+        const min = parseInt(match[1], 10);
+        const sec = parseInt(match[2], 10);
+        secondsElapsed = min * 60 + sec;
+        updateTimerDisplay();
+      } else {
+        alert('Invalid time format. Use mm:ss');
+      }
+    }
+
+    async function setShuffling() {
+      await updateSupabase('phase', null, 'left');
+      await updateSupabase('phase', null, 'right');
+
+      ['leftPhases', 'rightPhases'].forEach(containerId => {
+        const chips = document.getElementById(containerId).children;
+        for (let chip of chips) {
+          chip.classList.remove('active');
+        }
+      });
+    }
+
+    // Init on load
+    renderPhaseChips('left');
+    renderPhaseChips('right');
+    loadNames();
+    document.getElementById("cardFlipToggle-left").addEventListener("click", () => toggleCardFlip("left"));
+    document.getElementById("cardFlipToggle-right").addEventListener("click", () => toggleCardFlip("right"));
+  </script>
+</body>
+</html>

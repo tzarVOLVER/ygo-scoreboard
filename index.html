@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Feature Scoreboard</title>
+  <link rel="stylesheet" href="index.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@75..125,100..900&display=swap" />
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <div class="gameplay">
+    <!-- Player Info (Right/Player 2) -->
+    <svg class="brname-1 namebox" width="296" height="39">
+      <text id="brname1Text" x="0" y="30" font-size="41" font-family="'Anybody', sans-serif">MARSHALL D.</text>
+    </svg>
+    <b class="record-2">9 w - 2 l - 1 d</b>
+    <img class="flag-2-icon" />
+    <b class="deck-2">LABRYNTH</b>
+
+    <!-- Player Info (Left/Player 1) -->
+    <svg class="brname-2 namebox" width="288" height="39">
+      <text id="brname2Text" x="0" y="30" font-size="41" font-family="'Anybody', sans-serif" text-anchor="end">ADAM B.</text>
+    </svg>
+    <b class="record-1">9 w - 2 l - 1 d</b>
+    <img class="flag-1-icon" />
+    <b class="deck-1">Fiendsmith Snake-Eye</b>
+
+    <!-- Game Stats -->
+    <div class="timer">44:00</div>
+    <div class="lp-1">8000</div>
+    <div class="lp-2">8000</div>
+    <div class="score-1">0</div>
+    <div class="score-2">0</div>
+
+    <!-- PHASE (Left / Player 1) -->
+    <div class="phase-1 phase-box phase-left-box">
+      <div class="text-clip" id="left-clip">
+        <div id="leftText" class="text"></div>
+      </div>
+      <div id="leftArrow" class="arrow left"></div>
+    </div>
+
+    <!-- PHASE (Right / Player 2) -->
+    <div class="phase-2 phase-box phase-right-box">
+      <div class="text-clip" id="right-clip">
+        <div id="rightText" class="text"></div>
+      </div>
+      <div id="rightArrow" class="arrow right"></div>
+    </div>
+
+      <div class="card-wrapper">
+        <!-- Player 1 Card -->
+        <div class="card-container left">
+          <div class="card" id="card-1">
+            <div class="card-side card-front">
+              <img src="https://m.media-amazon.com/images/I/713e2DrwIKL._AC_UF894,1000_QL80_.jpg" alt="Card Front">
+            </div>
+            <div class="card-side card-back">
+              <img src="src\images\YuGiOh_Card_Back.png" alt="Card Back">
+            </div>
+            <div class="card-glare"></div>
+          </div>
+        </div>
+    
+        <!-- Player 2 Card -->
+        <div class="card-container right">
+          <div class="card" id="card-2">
+            <div class="card-side card-front">
+              <img src="https://m.media-amazon.com/images/I/713e2DrwIKL._AC_UF894,1000_QL80_.jpg" alt="Card Front">
+            </div>
+            <div class="card-side card-back">
+              <img src="src\images\YuGiOh_Card_Back.png" alt="Card Back">
+            </div>
+            <div class="card-glare"></div>
+          </div>
+        </div>
+      </div>
+     
+  </div>
+</body>
+</html>

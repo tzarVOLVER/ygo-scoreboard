@@ -1,0 +1,214 @@
+body {
+    background: url("../src/images/GAMEPLAY.png") no-repeat center center;
+    background-size: 1920px 1080px;
+    background-color: black;
+}
+  .brname-2 {
+    position: absolute;
+    top: 162px;
+    left: 1421px;
+    font-size: 41px;
+    text-transform: uppercase;
+    text-align: right;
+    align-items: center;
+    width: 288px;
+    height: 39px;
+  }
+  .record-2 {
+    position: absolute;
+    top: 144px;
+    left: 1445.5px;
+    font-size: 20px;
+    text-transform: uppercase;
+    color: #f62162;
+    text-align: right;
+    align-items: center;
+    width: 264px;
+    height: 16px;
+  }
+  .flag-2-icon {
+      position: absolute;
+      top: calc(50% - 374px);
+      left: calc(50% + 764.5px);
+      width: 46px;
+      height: 28px;
+      object-fit: cover;
+  }
+  .deck-2 {
+      position: absolute;
+      top: 425px;
+      left: 1445.5px;
+      font-size: 24px;
+      text-transform: uppercase;
+      display: flex;
+      color: #f62162;
+      align-items: center;
+      justify-content: center;
+      width: 325px;
+      height: 16px;
+  }
+  .brname-1 {
+      position: absolute;
+      top: 166px;
+      left: 198px;
+      font-size: 41px;
+      text-transform: uppercase;
+      display: flex;
+      text-align: left;
+      align-items: center;
+      width: 296px;
+      height: 34px;
+  }
+  .record-1 {
+      position: absolute;
+      top: 146px;
+      left: 198.5px;
+      font-size: 20px;
+      text-transform: uppercase;
+      display: flex;
+      color: #00a9ed;
+      text-align: left;
+      align-items: center;
+      width: 354px;
+      height: 16px;
+  }
+  .flag-1-icon {
+      position: absolute;
+      top: calc(50% - 374px);
+      left: calc(50% - 811.5px);
+      width: 46px;
+      height: 28px;
+      object-fit: cover;
+  }
+  .deck-1 {
+      position: absolute;
+      top: 425px;
+      left: 148.5px;
+      font-size: 24px;
+      text-transform: uppercase;
+      display: flex;
+      color: #00a9ed;
+      align-items: center;
+      justify-content: center;
+      width: 325px;
+      height: 16px;
+  }
+  .timer {
+      position: absolute;
+      top: 35px;
+      left: calc(50% - 56px);
+      font-size: 26px;
+      font-weight: 775;
+      font-stretch: expanded;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 113px;
+      height: 23px;
+  }
+  .phase-2 {
+      position: absolute;
+      top: 35px;
+      left: calc(50% + 215px);
+      font-size: 15px;
+      text-transform: uppercase;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 206px;
+      height: 25px;
+  }
+  .phase-1 {
+      position: absolute;
+      top: 35px;
+      left: calc(50% - 419px);
+      font-size: 15px;
+      text-transform: uppercase;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 206px;
+      height: 25px;
+  }
+  .lp-1 {
+      position: absolute;
+      top: 35px;
+      left: calc(50% - 150px);
+      text-transform: uppercase;
+      font-weight: 800;
+      color: #01a9ed;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 103px;
+      height: 23px;
+  }
+  .lp-2 {
+      position: absolute;
+      top: 35px;
+      left: calc(50% + 47px);
+      text-transform: uppercase;
+      font-weight: 800;
+      color: #f62162;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 103px;
+      height: 23px;
+  }
+  .score-1 {
+      position: absolute;
+      top: 32px;
+      left: calc(50% - 182px);
+      text-transform: uppercase;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 31.6px;
+      height: 27.8px;
+  }
+  .score-2 {
+      position: absolute;
+      top: 32px;
+      left: calc(50% + 150px);
+      text-transform: uppercase;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 31.6px;
+      height: 27.8px;
+  }
+  .rightturn-icon {
+      position: absolute;
+      top: 39px;
+      left: 1140px;
+      border-radius: 1px;
+      width: 16px;
+      height: 16px;
+      object-fit: contain;
+  }
+  .leftturn-icon {
+      position: absolute;
+      top: 39px;
+      left: 748px;
+      border-radius: 1px;
+      width: 16px;
+      height: 16px;
+      object-fit: contain;
+  }
+  .gameplay {
+      width: 100%;
+      position: relative;
+      height: 1080px;
+      overflow: hidden;
+      text-align: center;
+      font-size: 25px;
+      color: #fff;
+      font-family: Anybody;
+  }  
+  
