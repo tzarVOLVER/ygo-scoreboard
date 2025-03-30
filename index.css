@@ -6,7 +6,6 @@ body {
   margin: 0;
   background: url("src/images/GAMEPLAY.png") no-repeat center center;
   background-size: 1920px 1080px;
-  background-color: black;
 }
 
 .gameplay {
@@ -25,45 +24,69 @@ body {
   position: absolute;
   font-size: 41px;
   text-transform: uppercase;
-  text-align: left;
   align-items: center;
   height: 39px;
   width: 296px;
 }
 
+.namebox {
+  fill:white;
+  text-transform: uppercase;
+  font-weight: bold;
+  overflow: visible;
+  display: block;
+  position: absolute;
+  font-family: 'Anybody', sans-serif;
+}
+
 .brname-1 {
-  top: 166px;
-  left: 198px;
+  top: 164px;
+  left: 200px;
+  width: 296px;
+  height: 39px;
 }
 
 .brname-2 {
-  top: 162px;
-  left: 1421px;
-  text-align: right;
+  text-anchor: end;
+  top: 164px;
+  left: 1432px;
+  width: 288px;
+  height: 39px;
 }
 
 .record-1, .record-2 {
   position: absolute;
   font-size: 20px;
   text-transform: uppercase;
-  text-align: left;
-  align-items: center;
   width: 264px;
   height: 16px;
-  display: flex;
 }
 
 .record-1 {
+  position: absolute;
   top: 146px;
-  left: 198.5px;
+  left: 200px;
+  font-size: 20px;
+  text-transform: uppercase;
+  display: flex;
   color: #00a9ed;
+  text-align: left;
+  align-items: center;
+  width: 354px;
+  height: 16px;
 }
 
 .record-2 {
+  position: absolute;
   top: 144px;
-  left: 1445.5px;
+  left: 1455px;
+  font-size: 20px;
+  text-transform: uppercase;
   color: #f62162;
   text-align: right;
+  align-items: center;
+  width: 264px;
+  height: 16px;
 }
 
 .flag-1-icon, .flag-2-icon {
@@ -261,7 +284,7 @@ body {
 /* Arrow Indicators */
 .arrow {
   position: absolute;
-  top: 50%;
+  top: 40%;
   width: 0;
   height: 0;
   transform: translateY(-50%);
