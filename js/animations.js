@@ -10,7 +10,7 @@ export const cardStates = {
 };
 
 // 🔊 Preload LP change sound
-const lpChangeSoundTemplate = new Audio("/ygo-scoreboard/src/sfx/lifepoints.mp3");
+const lpChangeSoundTemplate = new Audio("https://tzarvolver.github.io/ygo-scoreboard/src/sfx/lifepoints.mp3");
 lpChangeSoundTemplate.preload = "auto";
 
 export let isAnimating = false;
