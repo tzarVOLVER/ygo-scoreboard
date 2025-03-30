@@ -108,3 +108,21 @@ export function updateUI(player, data) {
         }
     }
 }
+
+import { lpChangeSoundTemplate } from './animations.js';
+
+const popup = document.getElementById("audio-popup");
+const button = document.getElementById("enable-audio-btn");
+
+button.addEventListener("click", async () => {
+    try {
+        await lpChangeSoundTemplate.play();
+        lpChangeSoundTemplate.pause();
+        lpChangeSoundTemplate.currentTime = 0;
+        console.log("🔓 Audio enabled");
+        popup.style.display = "none";
+    } catch (e) {
+        alert("Audio could not be unlocked. Please try again.");
+        console.error("Audio unlock failed:", e);
+    }
+});
