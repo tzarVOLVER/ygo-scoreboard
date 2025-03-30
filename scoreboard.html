@@ -1,14 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Feature Scoreboard</title>
   <link rel="stylesheet" href="index.css" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@75..125,100..900&display=swap" />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@75..125,100..900&display=swap" />
   <script type="module" src="js/scoreboard.js"></script>
 </head>
+
 <body>
+  <div id="audio-popup" style="
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.85);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  flex-direction: column;
+  font-family: sans-serif;
+">
+    <h2>🔊 Click to Enable Audio</h2>
+    <button id="enable-audio-btn" style="
+    font-size: 1.2em;
+    padding: 0.5em 1.5em;
+    margin-top: 1em;
+    border: none;
+    border-radius: 5px;
+    background-color: #4caf50;
+    color: white;
+    cursor: pointer;
+  ">Enable Audio</button>
+  </div>
+
   <div class="gameplay">
     <!-- Player Info (Right/Player 2) -->
     <svg class="brname-1 namebox" width="296" height="39">
@@ -20,7 +50,8 @@
 
     <!-- Player Info (Left/Player 1) -->
     <svg class="brname-2 namebox" width="288" height="39">
-      <text id="brname2Text" x="0" y="30" font-size="41" font-family="'Anybody', sans-serif" text-anchor="end">ADAM B.</text>
+      <text id="brname2Text" x="0" y="30" font-size="41" font-family="'Anybody', sans-serif" text-anchor="end">ADAM
+        B.</text>
     </svg>
     <b class="record-1">9 w - 2 l - 1 d</b>
     <img class="flag-1-icon" />
@@ -49,34 +80,35 @@
       <div id="rightArrow" class="arrow right"></div>
     </div>
 
-      <div class="card-wrapper">
-        <!-- Player 1 Card -->
-        <div class="card-container left">
-          <div class="card" id="card-1">
-            <div class="card-side card-front">
-              <img src="https://m.media-amazon.com/images/I/713e2DrwIKL._AC_UF894,1000_QL80_.jpg" alt="Card Front">
-            </div>
-            <div class="card-side card-back">
-              <img src="src\images\YuGiOh_Card_Back.png" alt="Card Back">
-            </div>
-            <div class="card-glare"></div>
+    <div class="card-wrapper">
+      <!-- Player 1 Card -->
+      <div class="card-container left">
+        <div class="card" id="card-1">
+          <div class="card-side card-front">
+            <img src="https://m.media-amazon.com/images/I/713e2DrwIKL._AC_UF894,1000_QL80_.jpg" alt="Card Front">
           </div>
-        </div>
-    
-        <!-- Player 2 Card -->
-        <div class="card-container right">
-          <div class="card" id="card-2">
-            <div class="card-side card-front">
-              <img src="https://m.media-amazon.com/images/I/713e2DrwIKL._AC_UF894,1000_QL80_.jpg" alt="Card Front">
-            </div>
-            <div class="card-side card-back">
-              <img src="src\images\YuGiOh_Card_Back.png" alt="Card Back">
-            </div>
-            <div class="card-glare"></div>
+          <div class="card-side card-back">
+            <img src="src\images\YuGiOh_Card_Back.png" alt="Card Back">
           </div>
+          <div class="card-glare"></div>
         </div>
       </div>
-     
+
+      <!-- Player 2 Card -->
+      <div class="card-container right">
+        <div class="card" id="card-2">
+          <div class="card-side card-front">
+            <img src="https://m.media-amazon.com/images/I/713e2DrwIKL._AC_UF894,1000_QL80_.jpg" alt="Card Front">
+          </div>
+          <div class="card-side card-back">
+            <img src="src\images\YuGiOh_Card_Back.png" alt="Card Back">
+          </div>
+          <div class="card-glare"></div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </body>
+
 </html>
