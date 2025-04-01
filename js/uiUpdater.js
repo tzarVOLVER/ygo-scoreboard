@@ -19,37 +19,43 @@ const lastKnownPhases = {
     right: null,
 };
 
+function safeSetText(el, newText) {
+    if (el && el.innerText !== newText) {
+        el.innerText = newText;
+    }
+}
+
+function safeSetImageSrc(el, newSrc) {
+    if (el && el.src !== newSrc) {
+        el.src = newSrc;
+    }
+}
+
 export function updateUI(player, data) {
-    // ✅ Remap Supabase IDs 3 → 1, and 4 → 2
     const mappedPlayer = player === 3 ? 1 : player === 4 ? 2 : player;
     const isLeft = mappedPlayer === 1;
     const side = isLeft ? "left" : "right";
 
     // 🎨 Update name
     const nameTextEl = document.getElementById(`brname${mappedPlayer}Text`);
-    if (nameTextEl) {
+    if (nameTextEl && nameTextEl.innerText !== data.brName) {
         const maxWidth = 288;
         squashTextToFit(nameTextEl, maxWidth, data.brName, side);
     }
 
     // 🧾 Update record, deck, flag, score, LP
-    const recordEl = document.querySelector(`.record-${mappedPlayer}`);
-    if (recordEl) recordEl.innerText = data.record;
-
-    const deckEl = document.querySelector(`.deck-${mappedPlayer}`);
-    if (deckEl) deckEl.innerText = data.deck;
-
-    const flagImgEl = document.querySelector(`.flag-${mappedPlayer}-icon`);
-    if (flagImgEl) flagImgEl.src = data.flagImgUrl;
+    safeSetText(document.querySelector(`.record-${mappedPlayer}`), data.record);
+    safeSetText(document.querySelector(`.deck-${mappedPlayer}`), data.deck);
+    safeSetImageSrc(document.querySelector(`.flag-${mappedPlayer}-icon`), data.flagImgUrl);
+    safeSetText(document.querySelector(`.score-${mappedPlayer}`), data.score);
 
     const lpEl = document.querySelector(`.lp-${mappedPlayer}`);
-    if (lpEl) animateLP(lpEl, data.lifePoints);
-
-    const scoreEl = document.querySelector(`.score-${mappedPlayer}`);
-    if (scoreEl) scoreEl.innerText = data.score;
+    if (lpEl && typeof data.lifePoints === "number") {
+        animateLP(lpEl, data.lifePoints);
+    }
 
     // 🎬 Handle phase animation
-    const incomingPhase = (data.phase || "").trim();
+    const incomingPhase = (data.phase || "").trim().toLowerCase();
     if (incomingPhase !== lastKnownPhases[side]) {
         lastKnownPhases[side] = incomingPhase;
 
@@ -74,11 +80,9 @@ export function updateUI(player, data) {
     // 🖼️ Highlight image
     const cardId = isLeft ? "card-1" : "card-2";
     const cardFrontImg = document.querySelector(`#${cardId} .card-front img`);
-    if (cardFrontImg && data.cardHighlight) {
-        cardFrontImg.src = data.cardHighlight;
-    }
+    safeSetImageSrc(cardFrontImg, data.cardHighlight);
 
-    // ⏱ Timer (handled by Player 1 only)
+    // ⏱ Timer (Player 1 only)
     if (mappedPlayer === 1 && typeof data.timerValue === "string") {
         const baseTimeStr = data.timerValue;
         const adjustStr = data.timerAdjust;
