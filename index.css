@@ -106,6 +106,7 @@ body {
 }
 
 .deck-1, .deck-2 {
+  white-space:nowrap;
   position: absolute;
   top: 425px;
   font-size: 24px;
