@@ -36,6 +36,11 @@ export function updateUI(player, data) {
     const isLeft = mappedPlayer === 1;
     const side = isLeft ? "left" : "right";
 
+    // 🃏 Card flip
+    if (typeof data.cardFlipped === "boolean") {
+        setCardFlippedForSide(side, data.cardFlipped);
+    }
+
     // 🎨 Update name
     const nameTextEl = document.getElementById(`brname${mappedPlayer}Text`);
     if (nameTextEl && nameTextEl.innerText !== data.brName) {
@@ -72,12 +77,7 @@ export function updateUI(player, data) {
         }
     }
 
-    // 🃏 Card flip
-    if (typeof data.cardFlipped === "boolean") {
-        setCardFlippedForSide(side, data.cardFlipped);
-    }
-
-    // 🖼️ Highlight image
+    // CARD IMAGE
     const cardId = isLeft ? "card-1" : "card-2";
     const cardFrontImg = document.querySelector(`#${cardId} .card-front img`);
     safeSetImageSrc(cardFrontImg, data.cardHighlight);

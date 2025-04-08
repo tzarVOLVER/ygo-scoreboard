@@ -10,9 +10,12 @@ async function fetchPlayers() {
 
     if (error) {
         console.error("Error fetching players:", error);
-    } else {
-        data.forEach(player => updateUI(player.id, player));
+        return;
     }
+
+    data.forEach(player => {
+        updateUI(player.id, player); // no options needed
+    });
 }
 
 supabase

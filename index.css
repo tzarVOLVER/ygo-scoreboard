@@ -20,7 +20,8 @@ body {
 }
 
 /* Player Elements */
-.brname-1, .brname-2 {
+.brname-1,
+.brname-2 {
   position: absolute;
   font-size: 41px;
   text-transform: uppercase;
@@ -30,7 +31,7 @@ body {
 }
 
 .namebox {
-  fill:white;
+  fill: white;
   text-transform: uppercase;
   font-weight: bold;
   overflow: visible;
@@ -54,7 +55,8 @@ body {
   height: 39px;
 }
 
-.record-1, .record-2 {
+.record-1,
+.record-2 {
   position: absolute;
   font-size: 20px;
   text-transform: uppercase;
@@ -89,7 +91,8 @@ body {
   height: 16px;
 }
 
-.flag-1-icon, .flag-2-icon {
+.flag-1-icon,
+.flag-2-icon {
   position: absolute;
   top: calc(50% - 374px);
   width: 46px;
@@ -105,8 +108,9 @@ body {
   left: calc(50% + 764.5px);
 }
 
-.deck-1, .deck-2 {
-  white-space:nowrap;
+.deck-1,
+.deck-2 {
+  white-space: nowrap;
   position: absolute;
   top: 425px;
   font-size: 24px;
@@ -144,7 +148,8 @@ body {
   height: 23px;
 }
 
-.phase-1, .phase-2 {
+.phase-1,
+.phase-2 {
   position: absolute;
   top: 35px;
   font-size: 15px;
@@ -165,7 +170,8 @@ body {
   left: calc(50% + 215px);
 }
 
-.lp-1, .lp-2 {
+.lp-1,
+.lp-2 {
   position: absolute;
   top: 35px;
   text-transform: uppercase;
@@ -187,7 +193,8 @@ body {
   color: #f62162;
 }
 
-.score-1, .score-2 {
+.score-1,
+.score-2 {
   position: absolute;
   top: 32px;
   text-transform: uppercase;
@@ -207,7 +214,8 @@ body {
   left: calc(50% + 150px);
 }
 
-.rightturn-icon, .leftturn-icon {
+.rightturn-icon,
+.leftturn-icon {
   position: absolute;
   top: 39px;
   border-radius: 1px;
@@ -320,14 +328,7 @@ body {
   opacity: 1;
 }
 
-/* Card Flip */
-.card-container {
-  position: absolute;
-  width: 321px;
-  height: 468px;
-  perspective: 1000px;
-}
-
+/* Layout */
 .card-container.left {
   left: 151px;
   top: 470px;
@@ -338,24 +339,57 @@ body {
   top: 470px;
 }
 
+/* Layout */
+.card-container {
+  position: absolute;
+  width: 321px;
+  height: 468px;
+  perspective: 1300px;
+}
+
+/* Base card state */
 .card {
   width: 100%;
   height: 100%;
   position: relative;
   transform-style: preserve-3d;
-  transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
-  transform: rotateY(90deg);
-  opacity: 0;
+  backface-visibility: hidden;
 }
 
+/* Flip-in animation */
+@keyframes flipIn {
+  0% {
+    transform: rotateY(90deg);
+  }
+
+  50% {
+    transform: rotateY(180deg);
+  }
+
+  100% {
+    transform: rotateY(360deg);
+  }
+}
+
+.card.animate-in {
+  animation: flipIn 1.2s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+/* Flip-out transition */
+.card.animate-out {
+  transform: rotateY(90deg);
+  transition: transform 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* Card faces */
 .card-side {
   overflow: hidden;
   position: absolute;
   width: 100%;
   height: 100%;
-  backface-visibility: hidden;
   top: 0;
   left: 0;
+  backface-visibility: hidden;
 }
 
 .card-side img {
@@ -363,6 +397,8 @@ body {
   height: 100%;
   object-fit: cover;
   border-radius: 6px;
+  border-color: transparent;
+  border-width: 1px;
 }
 
 .card-front {
@@ -371,39 +407,6 @@ body {
 
 .card-back {
   transform: rotateY(180deg);
-}
-
-.card.show {
-  opacity: 1;
-}
-
-.card.flip-to-back {
-  transform: rotateY(180deg);
-}
-
-.card.flip-to-front {
-  transform: rotateY(360deg);
-  transition: transform 0.9s cubic-bezier(0.65, 0, 0.35, 1);
-}
-
-.card.flip-out-front {
-  transform: rotateY(270deg);
-  transition: transform 0.4s cubic-bezier(0.65, 0, 0.35, 1);
-}
-
-.card.hide {
-  opacity: 0;
-  transform: rotateY(90deg);
-}
-
-.card-glare {
-  z-index: 4;
-  overflow: hidden;
-  background-image: radial-gradient(farthest-corner circle at 150px 50px,
-    hsla(0, 0%, 100%, 0.8) 10%,
-    hsla(0, 0%, 100%, 0.65) 20%,
-    hsla(0, 0%, 0%, 0.5) 90%);
-  mix-blend-mode: overlay;
 }
 
 /* Buttons */

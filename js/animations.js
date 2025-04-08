@@ -9,7 +9,7 @@ export const cardStates = {
     right: { flipped: false }
 };
 
-// 🔊 Preload LP change sound
+//LP SFX PRE-LOAD
 export const lpChangeSoundTemplate = new Audio("https://tzarvolver.github.io/ygo-scoreboard/src/sfx/lifepoints.mp3");
 lpChangeSoundTemplate.preload = "auto";
 
@@ -71,7 +71,7 @@ export function processNextPhase() {
     }, 500);
 }
 
-// ✏️ Text resizing logic for SVG text labels
+//TEXT AUTO RESIZE
 export function squashTextToFit(textEl, maxWidth, newText, side = "left") {
     textEl.textContent = newText;
 
@@ -93,44 +93,35 @@ export function squashTextToFit(textEl, maxWidth, newText, side = "left") {
     });
 }
 
-// 🎴 Flip animation logic for cards
+//CARD FLIP
 export function setCardFlippedForSide(side, flipped) {
     const cardId = side === "left" ? "card-1" : "card-2";
     const card = document.getElementById(cardId);
     if (!card) return;
 
-    const current = cardStates[side].flipped;
+    const current = cardStates[side]?.flipped;
+    const hasBeenInitialized = card.hasAttribute("data-flip-initialized");
 
-    if (flipped && !current) {
-        card.classList.remove("hide", "flip-out-front", "flip-to-front");
-        card.classList.add("show");
+    // Don't re-apply if it's already in the desired state and has been initialized
+    if (flipped === current && hasBeenInitialized) return;
 
-        requestAnimationFrame(() => {
-            card.classList.add("flip-to-back");
-        });
+    // Reset classes to restart animation
+    card.classList.remove("animate-in", "animate-out");
+    void card.offsetWidth; // force reflow
 
-        setTimeout(() => {
-            card.classList.remove("flip-to-back");
-            card.classList.add("flip-to-front");
-        }, 1000);
+    // Apply the new animation class
+    card.classList.add(flipped ? "animate-in" : "animate-out");
 
-    } else if (!flipped && current) {
-        card.classList.remove("flip-to-front");
-        card.classList.add("flip-out-front");
+    // Mark the card as initialized
+    card.setAttribute("data-flip-initialized", "true");
 
-        card.addEventListener("transitionend", function handler(e) {
-            if (e.propertyName === "transform") {
-                card.classList.remove("flip-out-front", "show");
-                card.classList.add("hide");
-                card.removeEventListener("transitionend", handler);
-            }
-        });
-    }
-
+    // Update internal state
     cardStates[side].flipped = flipped;
+
+    console.log(`[CardFlip] side: ${side} | applied: ${flipped}`);
 }
 
-// 💖 Animate life point changes with easing and sound
+//LIFEPOINTS
 export function animateLP(element, newValue) {
     let startValue = parseInt(element.textContent, 10);
     if (isNaN(startValue)) startValue = 0;
