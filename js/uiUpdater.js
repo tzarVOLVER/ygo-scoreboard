@@ -77,10 +77,31 @@ export function updateUI(player, data) {
         }
     }
 
-    // CARD IMAGE
+    // Card image and flip
     const cardId = isLeft ? "card-1" : "card-2";
     const cardFrontImg = document.querySelector(`#${cardId} .card-front img`);
-    safeSetImageSrc(cardFrontImg, data.cardHighlight);
+    if (cardFrontImg && cardFrontImg.src !== data.cardHighlight) {
+        const preload = new Image();
+        preload.onload = async () => {
+            cardFrontImg.src = data.cardHighlight;
+
+            await supabase
+                .from(tableName)
+                .update({ [`${side}_image_loaded`]: true })
+                .eq("id", player);
+
+            if (typeof data.cardFlipped === "boolean" && data.cardFlipped) {
+                setCardFlippedForSide(side, true);
+            }
+        };
+        preload.onerror = () => {
+            console.error(`[Card] Failed to load highlight image for ${side}: ${data.cardHighlight}`);
+        };
+        preload.src = data.cardHighlight;
+    } else if (typeof data.cardFlipped === "boolean") {
+        // If image hasn't changed, just apply the flip state
+        setCardFlippedForSide(side, data.cardFlipped);
+    }
 
     // ⏱ Timer (Player 1 only)
     if (mappedPlayer === 1 && typeof data.timerValue === "string") {
