@@ -13,7 +13,9 @@ import {
     stopTimer
 } from './timer.js';
 
-// 🧠 Keep phase state persistent across updates
+import { supabase } from './supabaseClient.js';
+import { tableName } from './config.js';
+
 const lastKnownPhases = {
     left: null,
     right: null,
@@ -36,19 +38,14 @@ export function updateUI(player, data) {
     const isLeft = mappedPlayer === 1;
     const side = isLeft ? "left" : "right";
 
-    // 🃏 Card flip
-    if (typeof data.cardFlipped === "boolean") {
-        setCardFlippedForSide(side, data.cardFlipped);
-    }
-
-    // 🎨 Update name
+    //Update name
     const nameTextEl = document.getElementById(`brname${mappedPlayer}Text`);
     if (nameTextEl && nameTextEl.innerText !== data.brName) {
         const maxWidth = 288;
         squashTextToFit(nameTextEl, maxWidth, data.brName, side);
     }
 
-    // 🧾 Update record, deck, flag, score, LP
+    //Update record, deck, flag, score, LP
     safeSetText(document.querySelector(`.record-${mappedPlayer}`), data.record);
     safeSetText(document.querySelector(`.deck-${mappedPlayer}`), data.deck);
     safeSetImageSrc(document.querySelector(`.flag-${mappedPlayer}-icon`), data.flagImgUrl);
@@ -59,7 +56,7 @@ export function updateUI(player, data) {
         animateLP(lpEl, data.lifePoints);
     }
 
-    // 🎬 Handle phase animation
+    // Handle phase animation
     const incomingPhase = (data.phase || "").trim().toLowerCase();
     if (incomingPhase !== lastKnownPhases[side]) {
         lastKnownPhases[side] = incomingPhase;
@@ -77,7 +74,7 @@ export function updateUI(player, data) {
         }
     }
 
-    // Card image and flip
+    // Card image and flip (wait until image is loaded before flipping)
     const cardId = isLeft ? "card-1" : "card-2";
     const cardFrontImg = document.querySelector(`#${cardId} .card-front img`);
     if (cardFrontImg && cardFrontImg.src !== data.cardHighlight) {
@@ -103,7 +100,7 @@ export function updateUI(player, data) {
         setCardFlippedForSide(side, data.cardFlipped);
     }
 
-    // ⏱ Timer (Player 1 only)
+    // Timer (Player 1 only)
     if (mappedPlayer === 1 && typeof data.timerValue === "string") {
         const baseTimeStr = data.timerValue;
         const adjustStr = data.timerAdjust;
@@ -133,21 +130,3 @@ export function updateUI(player, data) {
         }
     }
 }
-
-import { lpChangeSoundTemplate } from './animations.js';
-
-const popup = document.getElementById("audio-popup");
-const button = document.getElementById("enable-audio-btn");
-
-button.addEventListener("click", async () => {
-    try {
-        await lpChangeSoundTemplate.play();
-        lpChangeSoundTemplate.pause();
-        lpChangeSoundTemplate.currentTime = 0;
-        console.log("🔓 Audio enabled");
-        popup.style.display = "none";
-    } catch (e) {
-        alert("Audio could not be unlocked. Please try again.");
-        console.error("Audio unlock failed:", e);
-    }
-});
