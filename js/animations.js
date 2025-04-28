@@ -126,13 +126,13 @@ export function animateLP(element, newValue) {
     let startValue = parseInt(element.textContent, 10);
     if (isNaN(startValue)) startValue = 0;
 
-    if (startValue === newValue) return; // No change? No animation.
+    if (startValue === newValue) return; //checks for new value
 
     const sound = lpChangeSoundTemplate.cloneNode();
     sound.play().catch(() => { });
 
     const change = newValue - startValue;
-    const duration = 1500;
+    const duration = 1350;
     const startTime = performance.now();
 
     function step(currentTime) {

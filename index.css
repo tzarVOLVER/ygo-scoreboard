@@ -328,7 +328,7 @@ body {
   opacity: 1;
 }
 
-/* Layout */
+/* card layout */
 .card-container.left {
   left: 151px;
   top: 470px;
@@ -372,7 +372,7 @@ body {
 }
 
 .card.animate-in {
-  animation: flipIn 1.2s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  animation: flipIn 1.5s cubic-bezier(0.65, 0, 0.35, 1) forwards;
 }
 
 /* Flip-out transition */
