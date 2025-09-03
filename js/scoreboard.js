@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient.js';
 import { tableName, playerIds } from './config.js';
 import { updateUI } from './uiUpdater.js';
+import { cardsHidden } from "./config.js";
 
 // NEW: lightweight global toggle
 if (cardsHidden) {
