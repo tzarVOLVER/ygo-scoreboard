@@ -420,3 +420,11 @@ button {
   border-radius: 6px;
   cursor: pointer;
 }
+
+html[data-cards="hidden"] body {
+  background-image: url("src/images/GAMEPLAY-nocards.png");
+}
+
+html[data-cards="hidden"] .card-wrapper {
+  display: none !important;
+}
