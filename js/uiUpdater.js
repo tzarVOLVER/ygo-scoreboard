@@ -36,7 +36,7 @@ function safeSetImageSrc(el, newSrc) {
 }
 
 export function updateUI(player, data) {
-    const mappedPlayer = player === 3 ? 1 : player === 4 ? 2 : player;
+    const mappedPlayer = ((player - 1) % 2) + 1;
     const isLeft = mappedPlayer === 1;
     const side = isLeft ? "left" : "right";
 

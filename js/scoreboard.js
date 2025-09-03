@@ -2,6 +2,14 @@ import { supabase } from './supabaseClient.js';
 import { tableName, playerIds } from './config.js';
 import { updateUI } from './uiUpdater.js';
 
+// NEW: lightweight global toggle
+if (cardsHidden) {
+    document.documentElement.setAttribute('data-cards', 'hidden');
+    const style = document.createElement('style');
+    style.textContent = `html[data-cards="hidden"] .card-wrapper { display: none !important; }`;
+    document.head.appendChild(style);
+}
+
 async function fetchPlayers() {
     const { data, error } = await supabase
         .from(tableName)
