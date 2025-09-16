@@ -1,7 +1,7 @@
 // control.js
 import { supabase } from './supabaseClient.js';
 
-// Your stage → table/id mapping
+// Stage → table/id mapping
 const STAGES = {
   bonus2: { table: 'bonus2Scoreboard', ids: [5, 6] },
   bonus3: { table: 'bonus3Scoreboard', ids: [7, 8] },
@@ -30,7 +30,7 @@ function msFromTimeString(str) {
   return (h*3600 + m*60 + sec) * 1000;
 }
 
-// normalize to "m:ss" or "h:mm:ss" like your overlay expects
+// normalize to overlay-friendly "m:ss" or "h:mm:ss"
 function clockFromMs(ms) {
   const total = Math.max(0, Math.round(ms/1000));
   const h = Math.floor(total/3600);
@@ -39,14 +39,13 @@ function clockFromMs(ms) {
   return h ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
            : `${m}:${String(s).padStart(2,'0')}`;
 }
-
 function normalizeClockInput(inputStr) {
   const ms = msFromTimeString(inputStr);
   if (ms == null) return null;
   return clockFromMs(ms);
 }
 
-// --- Data loaders ---
+// --- Names ---
 async function loadNames(stage) {
   const { table, ids } = STAGES[stage];
   const { data, error } = await supabase.from(table).select('id, brName').in('id', ids);
@@ -57,45 +56,38 @@ async function loadNames(stage) {
   $(`#${stage}-right`).value = right?.brName || '';
   status(stage, 'Loaded', true);
 }
-
 async function saveNames(stage) {
   const { table, ids } = STAGES[stage];
   const left  = $(`#${stage}-left`).value.trim();
   const right = $(`#${stage}-right`).value.trim();
-
   const u1 = supabase.from(table).update({ brName: left  }).eq('id', ids[0]);
   const u2 = supabase.from(table).update({ brName: right }).eq('id', ids[1]);
   const [{ error: e1 }, { error: e2 }] = await Promise.all([u1, u2]);
-
   if (e1 || e2) { status(stage, `Save error: ${(e1||e2).message}`); return; }
   status(stage, 'Names saved', true);
 }
 
-// --- TIMER (old schema writer) ---
-// Writes ONLY: timerValue (string), timerAdjust (string), timerPlay (bool), timerPause (bool)
-
+// --- TIMER (old schema writer: timerValue, timerAdjust, timerPlay) ---
 async function timerStart(stage, inputStr) {
   const { table, ids } = STAGES[stage];
-  const trimmed = (inputStr ?? '').trim();
+  const txt = (inputStr ?? '').trim();
 
-  if (!trimmed) {
+  if (!txt) {
     // RESUME (no new time)
-    const payload = { timerPlay: true, timerPause: false };
-    const { error } = await supabase.from(table).update(payload).in('id', ids);
+    const { error } = await supabase.from(table).update({ timerPlay: true }).in('id', ids);
     if (error) { status(stage, `Resume error: ${error.message}`); return; }
     status(stage, 'Resumed', true);
     return;
   }
 
   // START FRESH (new base time)
-  const clock = normalizeClockInput(trimmed);
+  const clock = normalizeClockInput(txt);
   if (clock == null) { status(stage, 'Enter a time like 45 or 45:00', false); return; }
 
   const payload = {
-    timerValue: clock,     // base round time
-    timerAdjust: null,     // clear adjust (using fresh base)
-    timerPlay: true,
-    timerPause: false
+    timerValue: clock, // base time
+    timerAdjust: '',   // clear adjust (fresh base)
+    timerPlay: true
   };
   const { error } = await supabase.from(table).update(payload).in('id', ids);
   if (error) { status(stage, `Start error: ${error.message}`); return; }
@@ -104,8 +96,7 @@ async function timerStart(stage, inputStr) {
 
 async function timerPause(stage) {
   const { table, ids } = STAGES[stage];
-  const payload = { timerPlay: false, timerPause: true };
-  const { error } = await supabase.from(table).update(payload).in('id', ids);
+  const { error } = await supabase.from(table).update({ timerPlay: false }).in('id', ids);
   if (error) { status(stage, `Pause error: ${error.message}`); return; }
   status(stage, 'Paused', true);
 }
@@ -114,15 +105,14 @@ async function timerPause(stage) {
 // Set & Start = write timerAdjust and start
 async function timerSet(stage, inputStr, start=false) {
   const { table, ids } = STAGES[stage];
-  const trimmed = (inputStr ?? '').trim();
-  const clock = normalizeClockInput(trimmed);
+  const txt = (inputStr ?? '').trim();
+  const clock = normalizeClockInput(txt);
   if (clock == null) { status(stage, 'Enter a time like 45 or 45:00', false); return; }
 
   const payload = {
-    // Do NOT touch timerValue here — overlay uses timerAdjust as the override
+    // Do NOT touch timerValue here — your overlay treats timerAdjust as the override
     timerAdjust: clock,
-    timerPlay: !!start,
-    timerPause: !start
+    timerPlay: !!start
   };
   const { error } = await supabase.from(table).update(payload).in('id', ids);
   if (error) { status(stage, `Set error: ${error.message}`); return; }
@@ -131,7 +121,6 @@ async function timerSet(stage, inputStr, start=false) {
 
 // --- Wire up UI ---
 for (const stage of Object.keys(STAGES)) {
-  // initial load
   loadNames(stage);
 
   const root = document.querySelector(`.card[data-stage="${stage}"]`);
@@ -140,7 +129,6 @@ for (const stage of Object.keys(STAGES)) {
 
   root.querySelector('[data-action="start"]').addEventListener('click', () => {
     const input = $(`#${stage}-time`).value;
-    // resume if no time entered; start fresh if time provided
     timerStart(stage, input);
   });
   root.querySelector('[data-action="pause"]').addEventListener('click', () => timerPause(stage));
