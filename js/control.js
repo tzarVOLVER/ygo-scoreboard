@@ -1,6 +1,11 @@
 // control.js
 import { supabase } from './supabaseClient.js';
 
+async function writeBothRows(stage, payload) {
+  const { table, ids } = STAGES[stage];
+  return supabase.from(table).update(payload).in('id', ids);
+}
+
 // Stage → table/id mapping
 const STAGES = {
   bonus2: { table: 'bonus2Scoreboard', ids: [5, 6] },
@@ -30,15 +35,14 @@ function msFromTimeString(str) {
   return (h*3600 + m*60 + sec) * 1000;
 }
 
-// normalize to overlay-friendly "m:ss" or "h:mm:ss"
+// normalize to overlay-friendly "m:ss" or "mm:ss"
 function clockFromMs(ms) {
-  const total = Math.max(0, Math.round(ms/1000));
-  const h = Math.floor(total/3600);
-  const m = Math.floor((total%3600)/60);
-  const s = total%60;
-  return h ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
-           : `${m}:${String(s).padStart(2,'0')}`;
+  const total = Math.max(0, Math.round(ms / 1000));
+  const mins = Math.floor(total / 60);
+  const secs = total % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
+
 function normalizeClockInput(inputStr) {
   const ms = msFromTimeString(inputStr);
   if (ms == null) return null;
@@ -69,28 +73,33 @@ async function saveNames(stage) {
 
 // --- TIMER (old schema writer: timerValue, timerAdjust, timerPlay) ---
 async function timerStart(stage, inputStr) {
-  const { table, ids } = STAGES[stage];
   const txt = (inputStr ?? '').trim();
 
   if (!txt) {
     // RESUME (no new time)
-    const { error } = await supabase.from(table).update({ timerPlay: true }).in('id', ids);
+    const { error } = await writeBothRows(stage, { timerPlay: true });
     if (error) { status(stage, `Resume error: ${error.message}`); return; }
     status(stage, 'Resumed', true);
     return;
   }
 
-  // START FRESH (new base time)
+  // START FRESH (new base time) — null first, then write
   const clock = normalizeClockInput(txt);
   if (clock == null) { status(stage, 'Enter a time like 45 or 45:00', false); return; }
 
-  const payload = {
-    timerValue: clock, // base time
-    timerAdjust: '',   // clear adjust (fresh base)
+  const { error: e1 } = await writeBothRows(stage, {
+    timerValue: null,
+    timerAdjust: null
+  });
+  if (e1) { status(stage, `Start error (clear): ${e1.message}`); return; }
+
+  const { error: e2 } = await writeBothRows(stage, {
+    timerValue: clock,
+    timerAdjust: null,
     timerPlay: true
-  };
-  const { error } = await supabase.from(table).update(payload).in('id', ids);
-  if (error) { status(stage, `Start error: ${error.message}`); return; }
+  });
+  if (e2) { status(stage, `Start error (set): ${e2.message}`); return; }
+
   status(stage, `Started (${clock})`, true);
 }
 
@@ -104,18 +113,24 @@ async function timerPause(stage) {
 // Set without starting = write timerAdjust and keep paused
 // Set & Start = write timerAdjust and start
 async function timerSet(stage, inputStr, start=false) {
-  const { table, ids } = STAGES[stage];
   const txt = (inputStr ?? '').trim();
   const clock = normalizeClockInput(txt);
   if (clock == null) { status(stage, 'Enter a time like 45 or 45:00', false); return; }
 
-  const payload = {
-    // Do NOT touch timerValue here — your overlay treats timerAdjust as the override
+  // Clear first
+  const { error: e1 } = await writeBothRows(stage, {
+    timerValue: null,
+    timerAdjust: null
+  });
+  if (e1) { status(stage, `Set error (clear): ${e1.message}`); return; }
+
+  // Then write the adjust (overlay treats this as the override)
+  const { error: e2 } = await writeBothRows(stage, {
     timerAdjust: clock,
     timerPlay: !!start
-  };
-  const { error } = await supabase.from(table).update(payload).in('id', ids);
-  if (error) { status(stage, `Set error: ${error.message}`); return; }
+  });
+  if (e2) { status(stage, `Set error (set): ${e2.message}`); return; }
+
   status(stage, `${start ? 'Set & started' : 'Set (paused)'} to ${clock}`, true);
 }
 
