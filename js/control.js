@@ -112,22 +112,36 @@ async function timerReset(stage, inputStr) {
   status(stage, `Reset to ${clock} (paused)`, true);
 }
 
-// --- SCORE / LP (inputs + Reset buttons only) ---
-async function resetScore(stage, side) {
+// --- SCORE / LP (Set + Reset buttons) ---
+async function setScore(stage, side) {
   const { table } = STAGES[stage];
   const id = sideToId(stage, side);
   const val = toIntOrDefault($(`#${stage}-${side}-score`)?.value, 0);
   const { error } = await supabase.from(table).update({ score: val }).eq('id', id);
-  if (error) { status(stage, `Score reset error: ${error.message}`); return; }
-  status(stage, `Score (${side}) → ${val}`, true);
+  if (error) { status(stage, `Score set error: ${error.message}`); return; }
+  status(stage, `Score (${side}) set → ${val}`, true);
 }
-async function resetLP(stage, side) {
+async function resetScore(stage, side) {
+  const { table } = STAGES[stage];
+  const id = sideToId(stage, side);
+  const { error } = await supabase.from(table).update({ score: 0 }).eq('id', id);
+  if (error) { status(stage, `Score reset error: ${error.message}`); return; }
+  status(stage, `Score (${side}) reset to 0`, true);
+}
+async function setLP(stage, side) {
   const { table } = STAGES[stage];
   const id = sideToId(stage, side);
   const val = toIntOrDefault($(`#${stage}-${side}-lp`)?.value, 8000);
   const { error } = await supabase.from(table).update({ lifePoints: val }).eq('id', id);
+  if (error) { status(stage, `LP set error: ${error.message}`); return; }
+  status(stage, `LP (${side}) set → ${val}`, true);
+}
+async function resetLP(stage, side) {
+  const { table } = STAGES[stage];
+  const id = sideToId(stage, side);
+  const { error } = await supabase.from(table).update({ lifePoints: 8000 }).eq('id', id);
   if (error) { status(stage, `LP reset error: ${error.message}`); return; }
-  status(stage, `LP (${side}) → ${val}`, true);
+  status(stage, `LP (${side}) reset to 8000`, true);
 }
 
 // --- Wire up UI ---
@@ -153,9 +167,20 @@ for (const stage of Object.keys(STAGES)) {
     timerReset(stage, input);
   });
 
-  // score/lp resets (input + reset button only)
-  root.querySelector('[data-action="reset-left-score"]')?.addEventListener('click', () => resetScore(stage, 'left'));
-  root.querySelector('[data-action="reset-right-score"]')?.addEventListener('click', () => resetScore(stage, 'right'));
-  root.querySelector('[data-action="reset-left-lp"]')?.addEventListener('click', () => resetLP(stage, 'left'));
-  root.querySelector('[data-action="reset-right-lp"]')?.addEventListener('click', () => resetLP(stage, 'right'));
+  // score/LP buttons
+  root.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+
+    if (action === 'set-left-score') return setScore(stage, 'left');
+    if (action === 'set-right-score') return setScore(stage, 'right');
+    if (action === 'reset-left-score') return resetScore(stage, 'left');
+    if (action === 'reset-right-score') return resetScore(stage, 'right');
+
+    if (action === 'set-left-lp') return setLP(stage, 'left');
+    if (action === 'set-right-lp') return setLP(stage, 'right');
+    if (action === 'reset-left-lp') return resetLP(stage, 'left');
+    if (action === 'reset-right-lp') return resetLP(stage, 'right');
+  });
 }
