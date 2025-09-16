@@ -23,7 +23,6 @@
     .ok { color:#56d364; }
     .err { color:#ff6b6b; }
     .timer { display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:end; margin-top:8px; }
-    .timer small { opacity:.8; }
     .spacer { height:8px; }
     .section-title { margin-top:12px; display:block; font-weight:600; }
   </style>
@@ -66,54 +65,40 @@
         </div>
       </div>
 
-      <!-- Score -->
+      <!-- Score (inputs + Reset only) -->
       <span class="section-title">Score</span>
       <div class="row">
         <div>
           <label class="muted">Left (id 5)</label>
+          <input id="bonus2-left-score" type="number" placeholder="0" />
           <div class="btns">
-            <button data-action="score-dec" data-side="left">-1</button>
-            <input id="bonus2-left-score" type="number" placeholder="0" style="width:90px" />
-            <button data-action="score-inc" data-side="left" class="primary">+1</button>
-            <button data-action="score-set" data-side="left">Set</button>
+            <button data-action="reset-left-score">Reset Score</button>
           </div>
         </div>
         <div>
           <label class="muted">Right (id 6)</label>
+          <input id="bonus2-right-score" type="number" placeholder="0" />
           <div class="btns">
-            <button data-action="score-dec" data-side="right">-1</button>
-            <input id="bonus2-right-score" type="number" placeholder="0" style="width:90px" />
-            <button data-action="score-inc" data-side="right" class="primary">+1</button>
-            <button data-action="score-set" data-side="right">Set</button>
+            <button data-action="reset-right-score">Reset Score</button>
           </div>
         </div>
       </div>
 
-      <!-- Life Points -->
+      <!-- Life Points (inputs + Reset only) -->
       <span class="section-title">Life Points</span>
       <div class="row">
         <div>
           <label class="muted">Left (id 5)</label>
+          <input id="bonus2-left-lp" type="number" placeholder="8000" />
           <div class="btns">
-            <button data-action="lp-dec" data-side="left" data-amount="1000">-1000</button>
-            <button data-action="lp-dec" data-side="left" data-amount="100">-100</button>
-            <input id="bonus2-left-lp" type="number" placeholder="8000" style="width:110px" />
-            <button data-action="lp-inc" data-side="left" data-amount="100">+100</button>
-            <button data-action="lp-inc" data-side="left" data-amount="1000" class="primary">+1000</button>
-            <button data-action="lp-set" data-side="left">Set</button>
-            <button data-action="lp-reset" data-side="left">Reset 8000</button>
+            <button data-action="reset-left-lp">Reset LP</button>
           </div>
         </div>
         <div>
           <label class="muted">Right (id 6)</label>
+          <input id="bonus2-right-lp" type="number" placeholder="8000" />
           <div class="btns">
-            <button data-action="lp-dec" data-side="right" data-amount="1000">-1000</button>
-            <button data-action="lp-dec" data-side="right" data-amount="100">-100</button>
-            <input id="bonus2-right-lp" type="number" placeholder="8000" style="width:110px" />
-            <button data-action="lp-inc" data-side="right" data-amount="100">+100</button>
-            <button data-action="lp-inc" data-side="right" data-amount="1000" class="primary">+1000</button>
-            <button data-action="lp-set" data-side="right">Set</button>
-            <button data-action="lp-reset" data-side="right">Reset 8000</button>
+            <button data-action="reset-right-lp">Reset LP</button>
           </div>
         </div>
       </div>
@@ -153,54 +138,40 @@
         </div>
       </div>
 
-      <!-- Score -->
+      <!-- Score (inputs + Reset only) -->
       <span class="section-title">Score</span>
       <div class="row">
         <div>
           <label class="muted">Left (id 7)</label>
+          <input id="bonus3-left-score" type="number" placeholder="0" />
           <div class="btns">
-            <button data-action="score-dec" data-side="left">-1</button>
-            <input id="bonus3-left-score" type="number" placeholder="0" style="width:90px" />
-            <button data-action="score-inc" data-side="left" class="primary">+1</button>
-            <button data-action="score-set" data-side="left">Set</button>
+            <button data-action="reset-left-score">Reset Score</button>
           </div>
         </div>
         <div>
           <label class="muted">Right (id 8)</label>
+          <input id="bonus3-right-score" type="number" placeholder="0" />
           <div class="btns">
-            <button data-action="score-dec" data-side="right">-1</button>
-            <input id="bonus3-right-score" type="number" placeholder="0" style="width:90px" />
-            <button data-action="score-inc" data-side="right" class="primary">+1</button>
-            <button data-action="score-set" data-side="right">Set</button>
+            <button data-action="reset-right-score">Reset Score</button>
           </div>
         </div>
       </div>
 
-      <!-- Life Points -->
+      <!-- Life Points (inputs + Reset only) -->
       <span class="section-title">Life Points</span>
       <div class="row">
         <div>
           <label class="muted">Left (id 7)</label>
+          <input id="bonus3-left-lp" type="number" placeholder="8000" />
           <div class="btns">
-            <button data-action="lp-dec" data-side="left" data-amount="1000">-1000</button>
-            <button data-action="lp-dec" data-side="left" data-amount="100">-100</button>
-            <input id="bonus3-left-lp" type="number" placeholder="8000" style="width:110px" />
-            <button data-action="lp-inc" data-side="left" data-amount="100">+100</button>
-            <button data-action="lp-inc" data-side="left" data-amount="1000" class="primary">+1000</button>
-            <button data-action="lp-set" data-side="left">Set</button>
-            <button data-action="lp-reset" data-side="left">Reset 8000</button>
+            <button data-action="reset-left-lp">Reset LP</button>
           </div>
         </div>
         <div>
           <label class="muted">Right (id 8)</label>
+          <input id="bonus3-right-lp" type="number" placeholder="8000" />
           <div class="btns">
-            <button data-action="lp-dec" data-side="right" data-amount="1000">-1000</button>
-            <button data-action="lp-dec" data-side="right" data-amount="100">-100</button>
-            <input id="bonus3-right-lp" type="number" placeholder="8000" style="width:110px" />
-            <button data-action="lp-inc" data-side="right" data-amount="100">+100</button>
-            <button data-action="lp-inc" data-side="right" data-amount="1000" class="primary">+1000</button>
-            <button data-action="lp-set" data-side="right">Set</button>
-            <button data-action="lp-reset" data-side="right">Reset 8000</button>
+            <button data-action="reset-right-lp">Reset LP</button>
           </div>
         </div>
       </div>
