@@ -112,7 +112,7 @@ async function timerReset(stage, inputStr) {
   if (clock == null) { status(stage, 'Enter a time like 45 or 45:00', false); return; }
 
   // Null first to force change, then set BASE value (not adjust), paused
-  const { error: e1 } = await writeBothRows(stage, { timerValue: null, timerAdjust: null });
+  const { error: e1 } = await writeBothRows(stage, { timerValue: null });
   if (e1) { status(stage, `Reset error (clear): ${e1.message}`); return; }
 
   const { error: e2 } = await writeBothRows(stage, { timerValue: clock, timerPlay: false });
