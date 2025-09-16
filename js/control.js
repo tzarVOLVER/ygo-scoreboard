@@ -1,11 +1,6 @@
 // control.js
 import { supabase } from './supabaseClient.js';
 
-async function writeBothRows(stage, payload) {
-  const { table, ids } = STAGES[stage];
-  return supabase.from(table).update(payload).in('id', ids);
-}
-
 // Stage → table/id mapping
 const STAGES = {
   bonus2: { table: 'bonus2Scoreboard', ids: [5, 6] },
@@ -20,7 +15,12 @@ function status(stage, msg, ok=false) {
   el.innerHTML = ok ? `<span class="ok">${msg}</span>` : `<span class="err">${msg}</span>`;
 }
 
-// accepts "mm:ss", "hh:mm:ss", or minutes like "45"
+async function writeBothRows(stage, payload) {
+  const { table, ids } = STAGES[stage];
+  return supabase.from(table).update(payload).in('id', ids);
+}
+
+// Accepts "mm:ss", "hh:mm:ss", or minutes like "45"
 function msFromTimeString(str) {
   if (str == null) return null;
   const s = String(str).trim();
@@ -35,14 +35,13 @@ function msFromTimeString(str) {
   return (h*3600 + m*60 + sec) * 1000;
 }
 
-// normalize to overlay-friendly "m:ss" or "mm:ss"
+// ALWAYS minutes:seconds (even > 60min)
 function clockFromMs(ms) {
   const total = Math.max(0, Math.round(ms / 1000));
   const mins = Math.floor(total / 60);
   const secs = total % 60;
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
-
 function normalizeClockInput(inputStr) {
   const ms = msFromTimeString(inputStr);
   if (ms == null) return null;
@@ -60,6 +59,7 @@ async function loadNames(stage) {
   $(`#${stage}-right`).value = right?.brName || '';
   status(stage, 'Loaded', true);
 }
+
 async function saveNames(stage) {
   const { table, ids } = STAGES[stage];
   const left  = $(`#${stage}-left`).value.trim();
@@ -71,67 +71,51 @@ async function saveNames(stage) {
   status(stage, 'Names saved', true);
 }
 
-// --- TIMER (old schema writer: timerValue, timerAdjust, timerPlay) ---
-async function timerStart(stage, inputStr) {
+// --- TIMER (old schema: timerValue, timerAdjust, timerPlay) ---
+// SET: set display value only (paused)
+async function timerSet(stage, inputStr) {
   const txt = (inputStr ?? '').trim();
-
-  if (!txt) {
-    // RESUME (no new time)
-    const { error } = await writeBothRows(stage, { timerPlay: true });
-    if (error) { status(stage, `Resume error: ${error.message}`); return; }
-    status(stage, 'Resumed', true);
-    return;
-  }
-
-  // START FRESH (new base time) — null first, then write
   const clock = normalizeClockInput(txt);
   if (clock == null) { status(stage, 'Enter a time like 45 or 45:00', false); return; }
 
-  const { error: e1 } = await writeBothRows(stage, {
-    timerValue: null,
-    timerAdjust: null
-  });
-  if (e1) { status(stage, `Start error (clear): ${e1.message}`); return; }
+  // Null first to ensure change event, then set adjust (paused)
+  const { error: e1 } = await writeBothRows(stage, { timerValue: null, timerAdjust: null });
+  if (e1) { status(stage, `Set error (clear): ${e1.message}`); return; }
 
-  const { error: e2 } = await writeBothRows(stage, {
-    timerValue: clock,
-    timerAdjust: null,
-    timerPlay: true
-  });
-  if (e2) { status(stage, `Start error (set): ${e2.message}`); return; }
+  const { error: e2 } = await writeBothRows(stage, { timerAdjust: clock, timerPlay: false });
+  if (e2) { status(stage, `Set error (set): ${e2.message}`); return; }
 
-  status(stage, `Started (${clock})`, true);
+  status(stage, `Set to ${clock} (paused)`, true);
 }
 
-async function timerPause(stage) {
-  const { table, ids } = STAGES[stage];
-  const { error } = await supabase.from(table).update({ timerPlay: false }).in('id', ids);
+// PLAY: start/resume (don’t change values)
+async function timerPlayFn(stage) {
+  const { error } = await writeBothRows(stage, { timerPlay: true });
+  if (error) { status(stage, `Play error: ${error.message}`); return; }
+  status(stage, 'Playing', true);
+}
+
+// PAUSE: pause (don’t change values)
+async function timerPauseFn(stage) {
+  const { error } = await writeBothRows(stage, { timerPlay: false });
   if (error) { status(stage, `Pause error: ${error.message}`); return; }
   status(stage, 'Paused', true);
 }
 
-// Set without starting = write timerAdjust and keep paused
-// Set & Start = write timerAdjust and start
-async function timerSet(stage, inputStr, start=false) {
+// RESET: stop/pause and update to typed display value (base)
+async function timerReset(stage, inputStr) {
   const txt = (inputStr ?? '').trim();
   const clock = normalizeClockInput(txt);
   if (clock == null) { status(stage, 'Enter a time like 45 or 45:00', false); return; }
 
-  // Clear first
-  const { error: e1 } = await writeBothRows(stage, {
-    timerValue: null,
-    timerAdjust: null
-  });
-  if (e1) { status(stage, `Set error (clear): ${e1.message}`); return; }
+  // Null first to force change, then set BASE value (not adjust), paused
+  const { error: e1 } = await writeBothRows(stage, { timerValue: null, timerAdjust: null });
+  if (e1) { status(stage, `Reset error (clear): ${e1.message}`); return; }
 
-  // Then write the adjust (overlay treats this as the override)
-  const { error: e2 } = await writeBothRows(stage, {
-    timerAdjust: clock,
-    timerPlay: !!start
-  });
-  if (e2) { status(stage, `Set error (set): ${e2.message}`); return; }
+  const { error: e2 } = await writeBothRows(stage, { timerValue: clock, timerPlay: false });
+  if (e2) { status(stage, `Reset error (set): ${e2.message}`); return; }
 
-  status(stage, `${start ? 'Set & started' : 'Set (paused)'} to ${clock}`, true);
+  status(stage, `Reset to ${clock} (paused)`, true);
 }
 
 // --- Wire up UI ---
@@ -142,17 +126,25 @@ for (const stage of Object.keys(STAGES)) {
   root.querySelector('[data-action="reload"]').addEventListener('click', () => loadNames(stage));
   root.querySelector('[data-action="save-names"]').addEventListener('click', () => saveNames(stage));
 
-  root.querySelector('[data-action="start"]').addEventListener('click', () => {
-    const input = $(`#${stage}-time`).value;
-    timerStart(stage, input);
-  });
-  root.querySelector('[data-action="pause"]').addEventListener('click', () => timerPause(stage));
+  // SET
   root.querySelector('[data-action="set"]').addEventListener('click', () => {
     const input = $(`#${stage}-time`).value;
-    timerSet(stage, input, false);
+    timerSet(stage, input);
   });
-  root.querySelector('[data-action="set-and-start"]').addEventListener('click', () => {
+
+  // PLAY
+  root.querySelector('[data-action="play"]').addEventListener('click', () => {
+    timerPlayFn(stage);
+  });
+
+  // PAUSE
+  root.querySelector('[data-action="pause"]').addEventListener('click', () => {
+    timerPauseFn(stage);
+  });
+
+  // RESET
+  root.querySelector('[data-action="reset"]').addEventListener('click', () => {
     const input = $(`#${stage}-time`).value;
-    timerSet(stage, input, true);
+    timerReset(stage, input);
   });
 }
