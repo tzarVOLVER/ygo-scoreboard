@@ -1,3 +1,4 @@
+// uiUpdater.js
 import {
     animateLP,
     queuePhase,
@@ -13,9 +14,12 @@ import {
     stopTimer
 } from './timer.js';
 
+import { cardsHidden } from './config.js'; // ⬅️ read URL switch (?cards=hidden|off|false|0)
+
+// If cards are hidden, treat both sides as already "ready" so no flip waits
 const imageReady = {
-    left: false,
-    right: false,
+    left:  !!cardsHidden,
+    right: !!cardsHidden,
 };
 
 const lastKnownPhases = {
@@ -25,14 +29,19 @@ const lastKnownPhases = {
 
 function safeSetText(el, newText) {
     if (el && el.innerText !== newText) {
-        el.innerText = newText;
+        el.innerText = newText ?? '';
     }
 }
 
 function safeSetImageSrc(el, newSrc) {
     if (el && el.src !== newSrc) {
-        el.src = newSrc;
+        el.src = newSrc || '';
     }
+}
+
+// Helper: ensure we only try to load real image URLs
+function hasImageUrl(u) {
+    return typeof u === "string" && u.trim() && u !== "null" && u !== "undefined";
 }
 
 export function updateUI(player, data) {
@@ -40,16 +49,16 @@ export function updateUI(player, data) {
     const isLeft = mappedPlayer === 1;
     const side = isLeft ? "left" : "right";
 
-    // 🃏 Card flip
-    if (typeof data.cardFlipped === "boolean") {
+    // 🃏 Card flip flag (only applies if cards are not hidden)
+    if (!cardsHidden && typeof data.cardFlipped === "boolean") {
         setCardFlippedForSide(side, data.cardFlipped);
     }
 
-    // 🎨 Update name
+    // 🎨 Update name (auto-squash)
     const nameTextEl = document.getElementById(`brname${mappedPlayer}Text`);
     if (nameTextEl && nameTextEl.innerText !== data.brName) {
         const maxWidth = 288;
-        squashTextToFit(nameTextEl, maxWidth, data.brName, side);
+        squashTextToFit(nameTextEl, maxWidth, data.brName ?? '', side);
     }
 
     // 🧾 Update record, deck, flag, score, LP
@@ -63,7 +72,7 @@ export function updateUI(player, data) {
         animateLP(lpEl, data.lifePoints);
     }
 
-    // 🎬 Handle phase animation
+    // 🎬 Phase animation (de-duped)
     const incomingPhase = (data.phase || "").trim().toLowerCase();
     if (incomingPhase !== lastKnownPhases[side]) {
         lastKnownPhases[side] = incomingPhase;
@@ -81,35 +90,40 @@ export function updateUI(player, data) {
         }
     }
 
-    // 🃏 Card image and flip (wait until image is loaded before flipping)
-    const cardId = isLeft ? "card-1" : "card-2";
-    const cardFrontImg = document.querySelector(`#${cardId} .card-front img`);
-    if (cardFrontImg && cardFrontImg.src !== data.cardHighlight) {
-        imageReady[side] = false; // Mark not ready
+    // 🃏 Card image + flip (ENTIRELY BYPASSED IF cardsHidden)
+    if (!cardsHidden) {
+        const cardId = isLeft ? "card-1" : "card-2";
+        const cardFrontImg = document.querySelector(`#${cardId} .card-front img`);
 
-        const preload = new Image();
-        preload.onload = () => {
-            cardFrontImg.src = data.cardHighlight;
-            imageReady[side] = true; // Mark ready
+        if (cardFrontImg && hasImageUrl(data.cardHighlight) && cardFrontImg.src !== data.cardHighlight) {
+            imageReady[side] = false; // loading
 
-            if (typeof data.cardFlipped === "boolean" && data.cardFlipped) {
-                setCardFlippedForSide(side, true); // Now safe to animate
+            const preload = new Image();
+            preload.onload = () => {
+                cardFrontImg.src = data.cardHighlight;
+                imageReady[side] = true;
+
+                if (typeof data.cardFlipped === "boolean" && data.cardFlipped) {
+                    setCardFlippedForSide(side, true); // safe to animate
+                }
+            };
+            preload.onerror = () => {
+                console.warn(`[Card] Failed to load highlight image for ${side}: ${data.cardHighlight}`);
+                imageReady[side] = true; // don't block flips forever
+            };
+            preload.src = data.cardHighlight;
+
+        } else if (typeof data.cardFlipped === "boolean") {
+            if (imageReady[side]) {
+                setCardFlippedForSide(side, data.cardFlipped);
+            } else {
+                console.log(`[CardFlip] Blocked: image not ready for ${side}`);
             }
-        };
-        preload.onerror = () => {
-            console.error(`[Card] Failed to load highlight image for ${side}: ${data.cardHighlight}`);
-        };
-        preload.src = data.cardHighlight;
-    } else if (typeof data.cardFlipped === "boolean") {
-        if (imageReady[side]) {
-            setCardFlippedForSide(side, data.cardFlipped);
-        } else {
-            console.log(`[CardFlip] Blocked: image not ready for ${side}`);
         }
     }
+    // else: no card work at all when hidden
 
-
-    // ⏱ Timer (Player 1 only)
+    // ⏱ Timer (Player 1 drives the display)
     if (mappedPlayer === 1 && typeof data.timerValue === "string") {
         const baseTimeStr = data.timerValue;
         const adjustStr = data.timerAdjust;
@@ -117,12 +131,14 @@ export function updateUI(player, data) {
         const baseSeconds = parseTimeToSeconds(baseTimeStr);
         const adjustSeconds = adjustStr ? parseTimeToSeconds(adjustStr) : null;
 
+        // (Re)initialize from base
         if (!timerState.hasInitialized || timerState.lastTimerValue !== baseTimeStr) {
             timerState.currentTime = baseSeconds;
             timerState.hasInitialized = true;
             timerState.lastTimerValue = baseTimeStr;
         }
 
+        // Apply adjust override if present and changed
         if (adjustStr && adjustStr !== timerState.lastTimerAdjust) {
             timerState.currentTime = adjustSeconds;
             timerState.lastTimerAdjust = adjustStr;
@@ -130,6 +146,7 @@ export function updateUI(player, data) {
 
         updateTimerDisplay();
 
+        // Play/pause
         if (data.timerPlay && !timerState.isRunning) {
             timerState.isRunning = true;
             startTimer();
@@ -140,6 +157,7 @@ export function updateUI(player, data) {
     }
 }
 
+// 🔊 One-time audio unlock (unchanged)
 import { lpChangeSoundTemplate } from './animations.js';
 
 const popup = document.getElementById("audio-popup");
