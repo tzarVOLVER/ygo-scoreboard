@@ -1,37 +1,71 @@
+// scoreboard.js
 import { supabase } from './supabaseClient.js';
-import { tableName, playerIds } from './config.js';
+import { tableName, playerIds, cardsHidden } from './config.js';
 import { updateUI } from './uiUpdater.js';
-import { cardsHidden } from "./config.js";
 
-// NEW: lightweight global toggle
+// Apply CSS toggle for hidden cards
 if (cardsHidden) {
-    document.documentElement.setAttribute('data-cards', 'hidden');
+  document.documentElement.setAttribute('data-cards', 'hidden');
 }
 
+// One-shot snapshot fetch
 async function fetchPlayers() {
-    const { data, error } = await supabase
-        .from(tableName)
-        .select("*")
-        .in("id", playerIds);
+  const { data, error } = await supabase
+    .from(tableName)
+    .select('*')
+    .in('id', playerIds);
 
-    if (error) {
-        console.error("Error fetching players:", error);
-        return;
-    }
+  if (error) {
+    console.error('Error fetching players:', error);
+    return;
+  }
 
-    data.forEach(player => {
-        updateUI(player.id, player); // no options needed
-    });
+  data.forEach((row) => updateUI(row.id, row));
 }
 
-supabase
-    .channel(`${tableName}-channel`)
-    .on("postgres_changes", { event: "*", schema: "public", table: tableName }, (payload) => {
-        const id = payload.new.id;
-        if (playerIds.includes(id)) {
-            updateUI(id, payload.new);
-        }
-    })
-    .subscribe();
+// --- Coalesce realtime updates per animation frame ---
+const pending = new Map(); // id -> latest row
+let scheduled = false;
 
+function flushPending() {
+  scheduled = false;
+  for (const [pid, row] of pending.entries()) {
+    pending.delete(pid);
+    updateUI(pid, row);
+  }
+}
+
+function scheduleUpdate(id, row) {
+  pending.set(id, row);
+  if (scheduled) return;
+  scheduled = true;
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(flushPending);
+  } else {
+    setTimeout(flushPending, 0);
+  }
+}
+
+// Realtime subscription: UPDATEs only
+supabase
+  .channel(`${tableName}-channel`)
+  .on(
+    'postgres_changes',
+    { event: 'UPDATE', schema: 'public', table: tableName },
+    (payload) => {
+      const row = payload?.new;
+      const id = row?.id;
+      if (id != null && playerIds.includes(id)) {
+        scheduleUpdate(id, row);
+      }
+    }
+  )
+  .subscribe();
+
+// Optional: re-sync when the tab becomes visible (helps after idle)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') fetchPlayers();
+});
+
+// Kick off
 fetchPlayers();
