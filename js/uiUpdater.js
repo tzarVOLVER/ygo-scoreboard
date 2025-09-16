@@ -18,7 +18,7 @@ import { cardsHidden } from './config.js'; // ⬅️ read URL switch (?cards=hid
 
 // If cards are hidden, treat both sides as already "ready" so no flip waits
 const imageReady = {
-    left:  !!cardsHidden,
+    left: !!cardsHidden,
     right: !!cardsHidden,
 };
 
@@ -124,37 +124,51 @@ export function updateUI(player, data) {
     // else: no card work at all when hidden
 
     // ⏱ Timer (Player 1 drives the display)
-    if (mappedPlayer === 1 && typeof data.timerValue === "string") {
-        const baseTimeStr = data.timerValue;
-        const adjustStr = data.timerAdjust;
+    // react if we have a base or an adjust, or a play/pause flip
+    if (
+        mappedPlayer === 1 &&
+        (typeof data.timerValue === "string" ||
+            typeof data.timerAdjust === "string" ||
+            typeof data.timerPlay === "boolean")
+    ) {
+        const baseTimeStr = (typeof data.timerValue === "string")
+            ? data.timerValue
+            : timerState.lastTimerValue; // fall back to last known base during null clears
 
-        const baseSeconds = parseTimeToSeconds(baseTimeStr);
+        const adjustStr = (typeof data.timerAdjust === "string")
+            ? data.timerAdjust
+            : null;
+
+        // derive seconds safely
+        const baseSeconds = baseTimeStr ? parseTimeToSeconds(baseTimeStr) : timerState.currentTime;
         const adjustSeconds = adjustStr ? parseTimeToSeconds(adjustStr) : null;
 
-        // (Re)initialize from base
-        if (!timerState.hasInitialized || timerState.lastTimerValue !== baseTimeStr) {
+        // (Re)initialize from base if first time or base changed
+        if (!timerState.hasInitialized || (baseTimeStr && timerState.lastTimerValue !== baseTimeStr)) {
             timerState.currentTime = baseSeconds;
             timerState.hasInitialized = true;
-            timerState.lastTimerValue = baseTimeStr;
+            if (baseTimeStr) timerState.lastTimerValue = baseTimeStr;
         }
 
         // Apply adjust override if present and changed
-        if (adjustStr && adjustStr !== timerState.lastTimerAdjust) {
+        if (adjustStr && timerState.lastTimerAdjust !== adjustStr) {
             timerState.currentTime = adjustSeconds;
             timerState.lastTimerAdjust = adjustStr;
         }
 
+        // Always repaint after processing timer fields
         updateTimerDisplay();
 
-        // Play/pause
-        if (data.timerPlay && !timerState.isRunning) {
+        // Play/pause flips (explicit true/false only)
+        if (data.timerPlay === true && !timerState.isRunning) {
             timerState.isRunning = true;
             startTimer();
-        } else if (!data.timerPlay && timerState.isRunning) {
+        } else if (data.timerPlay === false && timerState.isRunning) {
             timerState.isRunning = false;
             stopTimer();
         }
     }
+
 }
 
 // 🔊 One-time audio unlock (unchanged)
