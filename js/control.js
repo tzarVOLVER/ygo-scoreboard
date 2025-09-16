@@ -1,5 +1,5 @@
 // control.js
-import { supabase } from './supabaseClient.js';
+import { supabase } from 'js/supabaseClient.js';
 
 // Your stage → table/id mapping
 const STAGES = {
