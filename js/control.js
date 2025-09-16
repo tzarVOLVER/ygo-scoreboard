@@ -82,7 +82,7 @@ async function timerSet(stage, inputStr) {
   }
 
   // Null first to ensure change event, then set BASE value (paused)
-  const { error: e1 } = await writeBothRows(stage, { timerValue: null, timerAdjust: null });
+  const { error: e1 } = await writeBothRows(stage, { timerValue: null });
   if (e1) { status(stage, `Set error (clear): ${e1.message}`); return; }
 
   const { error: e2 } = await writeBothRows(stage, { timerValue: clock, timerPlay: false });
