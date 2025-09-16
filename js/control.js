@@ -71,21 +71,24 @@ async function saveNames(stage) {
   status(stage, 'Names saved', true);
 }
 
-// --- TIMER (old schema: timerValue, timerAdjust, timerPlay) ---
 // SET: set display value only (paused)
+// SET: set base value only (paused)
 async function timerSet(stage, inputStr) {
   const txt = (inputStr ?? '').trim();
   const clock = normalizeClockInput(txt);
-  if (clock == null) { status(stage, 'Enter a time like 45 or 45:00', false); return; }
+  if (clock == null) { 
+    status(stage, 'Enter a time like 45 or 45:00', false); 
+    return; 
+  }
 
-  // Null first to ensure change event, then set adjust (paused)
+  // Null first to ensure change event, then set BASE value (paused)
   const { error: e1 } = await writeBothRows(stage, { timerValue: null, timerAdjust: null });
   if (e1) { status(stage, `Set error (clear): ${e1.message}`); return; }
 
-  const { error: e2 } = await writeBothRows(stage, { timerAdjust: clock, timerPlay: false });
+  const { error: e2 } = await writeBothRows(stage, { timerValue: clock, timerPlay: false });
   if (e2) { status(stage, `Set error (set): ${e2.message}`); return; }
 
-  status(stage, `Set to ${clock} (paused)`, true);
+  status(stage, `Set timerValue to ${clock} (paused)`, true);
 }
 
 // PLAY: start/resume (don’t change values)
