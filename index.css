@@ -428,3 +428,19 @@ html[data-cards="hidden"] body {
 html[data-cards="hidden"] .card-wrapper {
   display: none !important;
 }
+
+/* Hide flag icons when cards are hidden */
+html[data-cards="hidden"] .flag-1-icon,
+html[data-cards="hidden"] .flag-2-icon,
+html[data-cards="hidden"] .flag-3-icon,
+html[data-cards="hidden"] .flag-4-icon,
+html[data-cards="hidden"] [class^="flag-"][class$="-icon"] {
+  display: none !important;
+}
+
+/* Let names expand to fill where flags were */
+html[data-cards="hidden"] #brname1Text,
+html[data-cards="hidden"] #brname2Text {
+  margin-left: 0 !important;         /* if there was a left offset for flags */
+  max-width: 100% !important;        /* allow full width */
+}
