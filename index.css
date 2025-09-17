@@ -439,8 +439,16 @@ html[data-cards="hidden"] [class^="flag-"][class$="-icon"] {
 }
 
 /* Let names expand to fill where flags were */
-html[data-cards="hidden"] #brname1Text,
-html[data-cards="hidden"] #brname2Text {
-  margin-left: 0 !important;         /* if there was a left offset for flags */
-  max-width: 100% !important;        /* allow full width */
+html[data-cards="hidden"] .brname-2 {
+  text-anchor: end;
+  top: 164px;
+  left: 1532px;
+  width: 288px;
+  height: 39px;
+}
+html[data-cards="hidden"] .brname-1 {
+  top: 164px;
+  left: 180px;
+  width: 296px;
+  height: 39px;
 }
