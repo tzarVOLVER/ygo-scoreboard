@@ -6,7 +6,7 @@ body {
   margin: 0;
   background: url("src/images/GAMEPLAY.png") no-repeat center center;
   background-size: 1920px 1080px;
-  background-color:black;
+  background-color:rgba(0, 0, 0, 0);
 }
 
 .gameplay {
