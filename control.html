@@ -2,19 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Bonus 2 & 3 Control</title>
+  <title>Bonus 2 Control</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
+    * { box-sizing: border-box; }
     :root { font-family: system-ui, Arial, sans-serif; }
     body { margin: 16px; background:#0b0b0c; color:#e9eef3; }
-    .grid { display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); }
+    .grid { display:grid; gap:16px; grid-template-columns: minmax(340px, 720px); }
     .card { background:#15171a; border:1px solid #2a2f36; border-radius:14px; padding:16px; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
     .card h2 { margin:0 0 10px; font-size:18px; letter-spacing:.5px; }
-    .row { display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin:8px 0; }
-    label { font-size:12px; opacity:.85; margin-bottom:4px; display:block; }
-    input[type="text"], input[type="number"] {
-      width:100%; padding:10px 12px; border-radius:10px; border:1px solid #2a2f36;
-      background:#0e1013; color:#e9eef3;
+    .row { 
+      display:grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap:12px; 
+      margin:8px 0; 
+      align-items:start; 
+    }
+    .col { min-width:0; } /* prevents overflow in grid children */
+    label { font-size:12px; opacity:.85; margin-bottom:6px; display:block; }
+    input[type="text"], input[type="number"], select {
+      width:100%; 
+      max-width:100%;
+      padding:10px 12px; 
+      border-radius:10px; 
+      border:1px solid #2a2f36;
+      background:#0e1013; 
+      color:#e9eef3;
     }
     .btns { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
     button { cursor:pointer; border:1px solid #2a2f36; background:#1b1f24; color:#e9eef3; padding:10px 14px; border-radius:10px; }
@@ -22,28 +35,32 @@
     .muted { opacity:.8; font-size:12px; margin-top:6px; }
     .ok { color:#56d364; }
     .err { color:#ff6b6b; }
-    .timer { display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:end; margin-top:8px; }
-    .spacer { height:8px; }
+
+    /* compact certain controls */
+    .timer { display:grid; grid-template-columns: auto 1fr; gap:8px; align-items:end; margin-top:8px; }
+    #bonus2-time { width: 140px; }          /* timer input narrower */
+    .score-lp input[type="number"] { width: 130px; } /* score/lp inputs compact */
+
     .section-title { margin-top:12px; display:block; font-weight:600; }
+    .spacer { height:8px; }
   </style>
 </head>
 <body>
-  <h1>Bonus 2 & 3 — Names, Timer, Score & LP</h1>
-  <div class="muted">Edits write directly to Supabase. Timer controls set shared timer fields on both rows for each stage.</div>
+  <h1>Bonus 2 — Names, Timer, Score, LP, Deck & Flag</h1>
+  <div class="muted">Writes go directly to Supabase. Timer uses old schema (timerValue / timerPlay / timerAdjust).</div>
   <div class="spacer"></div>
 
   <div class="grid">
-    <!-- ===================== BONUS 2 ===================== -->
     <section class="card" data-stage="bonus2">
       <h2>Bonus 2</h2>
 
       <!-- Names -->
       <div class="row">
-        <div>
+        <div class="col">
           <label>Left Player (id 5)</label>
           <input id="bonus2-left" type="text" placeholder="Player 1 name" />
         </div>
-        <div>
+        <div class="col">
           <label>Right Player (id 6)</label>
           <input id="bonus2-right" type="text" placeholder="Player 2 name" />
         </div>
@@ -51,6 +68,43 @@
       <div class="btns">
         <button data-action="save-names" class="primary">Save Names</button>
         <button data-action="reload">Reload</button>
+      </div>
+
+      <!-- Deck & Flag -->
+      <span class="section-title">Deck & Flag</span>
+      <div class="row">
+        <div class="col">
+          <label class="muted">Left Deck</label>
+          <input id="bonus2-left-deck" type="text" placeholder="e.g. Labrynth" />
+          <label class="muted" style="margin-top:8px;">Left Flag (country)</label>
+          <select id="bonus2-left-flagcode">
+            <option value="">— none —</option>
+            <option>US</option><option>CA</option><option>JP</option><option>FR</option>
+            <option>GB</option><option>DE</option><option>KR</option><option>MX</option>
+            <option>BR</option><option>AU</option><option>CN</option><option>IT</option>
+            <option>ES</option><option>SE</option><option>NO</option><option>NL</option>
+            <option>SG</option><option>TW</option><option>PH</option><option>IN</option>
+          </select>
+          <div class="btns">
+            <button data-action="set-left-meta" class="primary">Set Deck & Flag</button>
+          </div>
+        </div>
+        <div class="col">
+          <label class="muted">Right Deck</label>
+          <input id="bonus2-right-deck" type="text" placeholder="e.g. Snake-Eye" />
+          <label class="muted" style="margin-top:8px;">Right Flag (country)</label>
+          <select id="bonus2-right-flagcode">
+            <option value="">— none —</option>
+            <option>US</option><option>CA</option><option>JP</option><option>FR</option>
+            <option>GB</option><option>DE</option><option>KR</option><option>MX</option>
+            <option>BR</option><option>AU</option><option>CN</option><option>IT</option>
+            <option>ES</option><option>SE</option><option>NO</option><option>NL</option>
+            <option>SG</option><option>TW</option><option>PH</option><option>IN</option>
+          </select>
+          <div class="btns">
+            <button data-action="set-right-meta" class="primary">Set Deck & Flag</button>
+          </div>
+        </div>
       </div>
 
       <!-- Timer -->
@@ -67,8 +121,8 @@
 
       <!-- Score -->
       <span class="section-title">Score</span>
-      <div class="row">
-        <div>
+      <div class="row score-lp">
+        <div class="col">
           <label class="muted">Left (id 5)</label>
           <input id="bonus2-left-score" type="number" placeholder="0" />
           <div class="btns">
@@ -76,7 +130,7 @@
             <button data-action="reset-left-score">Reset</button>
           </div>
         </div>
-        <div>
+        <div class="col">
           <label class="muted">Right (id 6)</label>
           <input id="bonus2-right-score" type="number" placeholder="0" />
           <div class="btns">
@@ -88,8 +142,8 @@
 
       <!-- Life Points -->
       <span class="section-title">Life Points</span>
-      <div class="row">
-        <div>
+      <div class="row score-lp">
+        <div class="col">
           <label class="muted">Left (id 5)</label>
           <input id="bonus2-left-lp" type="number" placeholder="8000" />
           <div class="btns">
@@ -97,7 +151,7 @@
             <button data-action="reset-left-lp">Reset</button>
           </div>
         </div>
-        <div>
+        <div class="col">
           <label class="muted">Right (id 6)</label>
           <input id="bonus2-right-lp" type="number" placeholder="8000" />
           <div class="btns">
@@ -108,83 +162,6 @@
       </div>
 
       <div class="muted" id="bonus2-status"></div>
-    </section>
-
-    <!-- ===================== BONUS 3 ===================== -->
-    <section class="card" data-stage="bonus3">
-      <h2>Bonus 3</h2>
-
-      <!-- Names -->
-      <div class="row">
-        <div>
-          <label>Left Player (id 7)</label>
-          <input id="bonus3-left" type="text" placeholder="Player 1 name" />
-        </div>
-        <div>
-          <label>Right Player (id 8)</label>
-          <input id="bonus3-right" type="text" placeholder="Player 2 name" />
-        </div>
-      </div>
-      <div class="btns">
-        <button data-action="save-names" class="primary">Save Names</button>
-        <button data-action="reload">Reload</button>
-      </div>
-
-      <!-- Timer -->
-      <span class="section-title">Round Timer</span>
-      <div class="timer">
-        <input id="bonus3-time" type="text" placeholder="mm:ss" />
-        <div class="btns">
-          <button data-action="set">SET</button>
-          <button data-action="play" class="primary">PLAY</button>
-          <button data-action="pause">PAUSE</button>
-          <button data-action="reset">RESET</button>
-        </div>
-      </div>
-
-      <!-- Score -->
-      <span class="section-title">Score</span>
-      <div class="row">
-        <div>
-          <label class="muted">Left (id 7)</label>
-          <input id="bonus3-left-score" type="number" placeholder="0" />
-          <div class="btns">
-            <button data-action="set-left-score" class="primary">Set</button>
-            <button data-action="reset-left-score">Reset</button>
-          </div>
-        </div>
-        <div>
-          <label class="muted">Right (id 8)</label>
-          <input id="bonus3-right-score" type="number" placeholder="0" />
-          <div class="btns">
-            <button data-action="set-right-score" class="primary">Set</button>
-            <button data-action="reset-right-score">Reset</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Life Points -->
-      <span class="section-title">Life Points</span>
-      <div class="row">
-        <div>
-          <label class="muted">Left (id 7)</label>
-          <input id="bonus3-left-lp" type="number" placeholder="8000" />
-          <div class="btns">
-            <button data-action="set-left-lp" class="primary">Set</button>
-            <button data-action="reset-left-lp">Reset</button>
-          </div>
-        </div>
-        <div>
-          <label class="muted">Right (id 8)</label>
-          <input id="bonus3-right-lp" type="number" placeholder="8000" />
-          <div class="btns">
-            <button data-action="set-right-lp" class="primary">Set</button>
-            <button data-action="reset-right-lp">Reset</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="muted" id="bonus3-status"></div>
     </section>
   </div>
 

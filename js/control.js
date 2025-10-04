@@ -1,28 +1,35 @@
 // control.js
 import { supabase } from './supabaseClient.js';
 
-// Stage → table/id mapping
-const STAGES = {
-  bonus2: { table: 'bonus2Scoreboard', ids: [5, 6] },
-  bonus3: { table: 'bonus3Scoreboard', ids: [7, 8] },
-};
+// Single-stage mapping (Bonus 2 only)
+const STAGE = { table: 'bonus2Scoreboard', ids: [5, 6] };
 
 // --- Utilities ---
 function $(sel, root=document) { return root.querySelector(sel); }
-function status(stage, msg, ok=false) {
-  const el = document.getElementById(`${stage}-status`);
+function status(msg, ok=false) {
+  const el = document.getElementById('bonus2-status');
   if (!el) return;
   el.innerHTML = ok ? `<span class="ok">${msg}</span>` : `<span class="err">${msg}</span>`;
 }
-async function writeBothRows(stage, payload) {
-  const { table, ids } = STAGES[stage];
+async function writeBothRows(payload) {
+  const { table, ids } = STAGE;
   return supabase.from(table).update(payload).in('id', ids);
 }
+function sideToId(side) {
+  const { ids } = STAGE;
+  return side === 'left' ? ids[0] : ids[1];
+}
+function toIntOrDefault(v, d) {
+  const n = Number.parseInt(String(v ?? '').trim(), 10);
+  return Number.isNaN(n) ? d : n;
+}
+
+// --- Timer helpers ---
 function msFromTimeString(str) {
   if (str == null) return null;
   const s = String(str).trim();
   if (!s) return null;
-  if (/^\d+$/.test(s)) return parseInt(s, 10) * 60_000; // minutes → ms
+  if (/^\d+$/.test(s)) return parseInt(s, 10) * 60_000; // plain minutes -> ms
   const parts = s.split(':').map(n => parseInt(n, 10));
   if (parts.some(Number.isNaN)) return null;
   let h=0,m=0,sec=0;
@@ -31,7 +38,7 @@ function msFromTimeString(str) {
   else return null;
   return (h*3600 + m*60 + sec) * 1000;
 }
-// ALWAYS minutes:seconds (even > 60min)
+// minutes-only display (even > 60 mins)
 function clockFromMs(ms) {
   const total = Math.max(0, Math.round(ms / 1000));
   const mins = Math.floor(total / 60);
@@ -43,144 +50,166 @@ function normalizeClockInput(inputStr) {
   if (ms == null) return null;
   return clockFromMs(ms);
 }
-function sideToId(stage, side) {
-  const { ids } = STAGES[stage];
-  return side === 'left' ? ids[0] : ids[1];
-}
-function toIntOrDefault(v, d) {
-  const n = Number.parseInt(String(v ?? '').trim(), 10);
-  return Number.isNaN(n) ? d : n;
+
+// --- Flag code -> URL (FlagCDN PNG; lowercased 2-letter ISO) ---
+function flagUrlFromCode(code) {
+  const cc = String(code || '').trim().toLowerCase();
+  if (!cc) return '';
+  // 2x height PNG (80px tall) looks crisp; adjust if you need another size
+  return `https://flagcdn.com/h80/${cc}.png`;
 }
 
-// --- Names ---
-async function loadNames(stage) {
-  const { table, ids } = STAGES[stage];
-  const { data, error } = await supabase.from(table).select('id, brName, score, lifePoints').in('id', ids);
-  if (error) { status(stage, `Load error: ${error.message}`); return; }
+// --- Load / Save Names & Meta ---
+async function loadAll() {
+  const { table, ids } = STAGE;
+  const { data, error } = await supabase
+    .from(table)
+    .select('id, brName, score, lifePoints, deck, flagImgUrl')
+    .in('id', ids);
+
+  if (error) { status(`Load error: ${error.message}`); return; }
+
   const left = data.find(r => r.id === ids[0]) || {};
   const right = data.find(r => r.id === ids[1]) || {};
-  $(`#${stage}-left`).value  = left.brName  || '';
-  $(`#${stage}-right`).value = right.brName || '';
-  // seed placeholders for score/LP
-  $(`#${stage}-left-score`)?.setAttribute('placeholder', String(left.score ?? 0));
-  $(`#${stage}-right-score`)?.setAttribute('placeholder', String(right.score ?? 0));
-  $(`#${stage}-left-lp`)?.setAttribute('placeholder', String(left.lifePoints ?? 8000));
-  $(`#${stage}-right-lp`)?.setAttribute('placeholder', String(right.lifePoints ?? 8000));
-  status(stage, 'Loaded', true);
+
+  // Names
+  $('#bonus2-left').value  = left.brName  ?? '';
+  $('#bonus2-right').value = right.brName ?? '';
+
+  // Score / LP placeholders
+  $('#bonus2-left-score')?.setAttribute('placeholder', String(left.score ?? 0));
+  $('#bonus2-right-score')?.setAttribute('placeholder', String(right.score ?? 0));
+  $('#bonus2-left-lp')?.setAttribute('placeholder', String(left.lifePoints ?? 8000));
+  $('#bonus2-right-lp')?.setAttribute('placeholder', String(right.lifePoints ?? 8000));
+
+  // Deck
+  $('#bonus2-left-deck').value  = left.deck  ?? '';
+  $('#bonus2-right-deck').value = right.deck ?? '';
+
+  // Flag dropdown preselect based on existing flagImgUrl (best-effort parse)
+  const leftFlagCode  = (left.flagImgUrl  || '').split('/').pop()?.split('.')[0]?.toUpperCase() || '';
+  const rightFlagCode = (right.flagImgUrl || '').split('/').pop()?.split('.')[0]?.toUpperCase() || '';
+  $('#bonus2-left-flagcode').value  = leftFlagCode.length === 2 ? leftFlagCode : '';
+  $('#bonus2-right-flagcode').value = rightFlagCode.length === 2 ? rightFlagCode : '';
+
+  status('Loaded', true);
 }
-async function saveNames(stage) {
-  const { table, ids } = STAGES[stage];
-  const left  = $(`#${stage}-left`).value.trim();
-  const right = $(`#${stage}-right`).value.trim();
+
+async function saveNames() {
+  const { table, ids } = STAGE;
+  const left  = $('#bonus2-left').value.trim();
+  const right = $('#bonus2-right').value.trim();
   const u1 = supabase.from(table).update({ brName: left  }).eq('id', ids[0]);
   const u2 = supabase.from(table).update({ brName: right }).eq('id', ids[1]);
   const [{ error: e1 }, { error: e2 }] = await Promise.all([u1, u2]);
-  if (e1 || e2) { status(stage, `Save error: ${(e1||e2).message}`); return; }
-  status(stage, 'Names saved', true);
+  if (e1 || e2) { status(`Save error: ${(e1||e2).message}`); return; }
+  status('Names saved', true);
 }
 
-// --- TIMER (old schema: timerValue, timerAdjust, timerPlay) ---
-async function timerSet(stage, inputStr) {
-  const txt = (inputStr ?? '').trim();
-  const clock = normalizeClockInput(txt);
-  if (clock == null) { status(stage, 'Enter a time like 45 or 45:00', false); return; }
-  // use "0:00" as clear to avoid null-update race
-  const { error: e1 } = await writeBothRows(stage, { timerValue: "0:00", timerAdjust: null });
-  if (e1) { status(stage, `Set error (clear): ${e1.message}`); return; }
-  const { error: e2 } = await writeBothRows(stage, { timerValue: clock, timerPlay: false });
-  if (e2) { status(stage, `Set error (set): ${e2.message}`); return; }
-  status(stage, `Set timerValue to ${clock} (paused)`, true);
-}
-async function timerPlayFn(stage) {
-  const { error } = await writeBothRows(stage, { timerPlay: true });
-  if (error) { status(stage, `Play error: ${error.message}`); return; }
-  status(stage, 'Playing', true);
-}
-async function timerPauseFn(stage) {
-  const { error } = await writeBothRows(stage, { timerPlay: false });
-  if (error) { status(stage, `Pause error: ${error.message}`); return; }
-  status(stage, 'Paused', true);
-}
-async function timerReset(stage, inputStr) {
-  const txt = (inputStr ?? '').trim();
-  const clock = normalizeClockInput(txt);
-  if (clock == null) { status(stage, 'Enter a time like 45 or 45:00', false); return; }
-  const { error: e1 } = await writeBothRows(stage, { timerValue: "0:00", timerAdjust: null });
-  if (e1) { status(stage, `Reset error (clear): ${e1.message}`); return; }
-  const { error: e2 } = await writeBothRows(stage, { timerValue: clock, timerPlay: false });
-  if (e2) { status(stage, `Reset error (set): ${e2.message}`); return; }
-  status(stage, `Reset to ${clock} (paused)`, true);
+// --- Deck & Flag (per-side Set) ---
+async function setMeta(side) {
+  const { table } = STAGE;
+  const id = sideToId(side);
+  const deck = $(`#bonus2-${side}-deck`)?.value ?? '';
+  const code = $(`#bonus2-${side}-flagcode`)?.value ?? '';
+  const flagImgUrl = flagUrlFromCode(code);
+  const { error } = await supabase.from(table).update({ deck, flagImgUrl }).eq('id', id);
+  if (error) { status(`Meta (${side}) error: ${error.message}`); return; }
+  status(`Updated ${side} deck & flag`, true);
 }
 
-// --- SCORE / LP (Set + Reset buttons) ---
-async function setScore(stage, side) {
-  const { table } = STAGES[stage];
-  const id = sideToId(stage, side);
-  const val = toIntOrDefault($(`#${stage}-${side}-score`)?.value, 0);
+// --- Timer (old schema: timerValue, timerAdjust, timerPlay) ---
+async function timerSet() {
+  const txt = ($('#bonus2-time').value ?? '').trim();
+  const clock = normalizeClockInput(txt);
+  if (clock == null) { status('Enter a time like 45 or 45:00', false); return; }
+  // clear (0:00) first to force realtime change, then set paused
+  const { error: e1 } = await writeBothRows({ timerValue: '0:00', timerAdjust: null });
+  if (e1) { status(`Set error (clear): ${e1.message}`); return; }
+  const { error: e2 } = await writeBothRows({ timerValue: clock, timerPlay: false });
+  if (e2) { status(`Set error (set): ${e2.message}`); return; }
+  status(`Set timerValue to ${clock} (paused)`, true);
+}
+async function timerPlay() {
+  const { error } = await writeBothRows({ timerPlay: true });
+  if (error) { status(`Play error: ${error.message}`); return; }
+  status('Playing', true);
+}
+async function timerPause() {
+  const { error } = await writeBothRows({ timerPlay: false });
+  if (error) { status(`Pause error: ${error.message}`); return; }
+  status('Paused', true);
+}
+async function timerReset() {
+  const txt = ($('#bonus2-time').value ?? '').trim();
+  const clock = normalizeClockInput(txt);
+  if (clock == null) { status('Enter a time like 45 or 45:00', false); return; }
+  const { error: e1 } = await writeBothRows({ timerValue: '0:00', timerAdjust: null });
+  if (e1) { status(`Reset error (clear): ${e1.message}`); return; }
+  const { error: e2 } = await writeBothRows({ timerValue: clock, timerPlay: false });
+  if (e2) { status(`Reset error (set): ${e2.message}`); return; }
+  status(`Reset to ${clock} (paused)`, true);
+}
+
+// --- Score / Life Points (Set + Reset) ---
+async function setScore(side) {
+  const { table } = STAGE;
+  const id = sideToId(side);
+  const val = toIntOrDefault($(`#bonus2-${side}-score`)?.value, 0);
   const { error } = await supabase.from(table).update({ score: val }).eq('id', id);
-  if (error) { status(stage, `Score set error: ${error.message}`); return; }
-  status(stage, `Score (${side}) set → ${val}`, true);
+  if (error) { status(`Score (${side}) error: ${error.message}`); return; }
+  status(`Score (${side}) → ${val}`, true);
 }
-async function resetScore(stage, side) {
-  const { table } = STAGES[stage];
-  const id = sideToId(stage, side);
+async function resetScore(side) {
+  const { table } = STAGE;
+  const id = sideToId(side);
   const { error } = await supabase.from(table).update({ score: 0 }).eq('id', id);
-  if (error) { status(stage, `Score reset error: ${error.message}`); return; }
-  status(stage, `Score (${side}) reset to 0`, true);
+  if (error) { status(`Score reset (${side}) error: ${error.message}`); return; }
+  status(`Score (${side}) reset to 0`, true);
 }
-async function setLP(stage, side) {
-  const { table } = STAGES[stage];
-  const id = sideToId(stage, side);
-  const val = toIntOrDefault($(`#${stage}-${side}-lp`)?.value, 8000);
+async function setLP(side) {
+  const { table } = STAGE;
+  const id = sideToId(side);
+  const val = toIntOrDefault($(`#bonus2-${side}-lp`)?.value, 8000);
   const { error } = await supabase.from(table).update({ lifePoints: val }).eq('id', id);
-  if (error) { status(stage, `LP set error: ${error.message}`); return; }
-  status(stage, `LP (${side}) set → ${val}`, true);
+  if (error) { status(`LP (${side}) error: ${error.message}`); return; }
+  status(`LP (${side}) → ${val}`, true);
 }
-async function resetLP(stage, side) {
-  const { table } = STAGES[stage];
-  const id = sideToId(stage, side);
+async function resetLP(side) {
+  const { table } = STAGE;
+  const id = sideToId(side);
   const { error } = await supabase.from(table).update({ lifePoints: 8000 }).eq('id', id);
-  if (error) { status(stage, `LP reset error: ${error.message}`); return; }
-  status(stage, `LP (${side}) reset to 8000`, true);
+  if (error) { status(`LP reset (${side}) error: ${error.message}`); return; }
+  status(`LP (${side}) reset to 8000`, true);
 }
 
-// --- Wire up UI ---
-for (const stage of Object.keys(STAGES)) {
-  // initial load
-  loadNames(stage);
+// --- Wire up ---
+(function init() {
+  loadAll();
 
-  const root = document.querySelector(`.card[data-stage="${stage}"]`);
+  const root = document.querySelector('.card[data-stage="bonus2"]');
 
   // names
-  root.querySelector('[data-action="reload"]').addEventListener('click', () => loadNames(stage));
-  root.querySelector('[data-action="save-names"]').addEventListener('click', () => saveNames(stage));
+  root.querySelector('[data-action="reload"]').addEventListener('click', loadAll);
+  root.querySelector('[data-action="save-names"]').addEventListener('click', saveNames);
+
+  // deck + flag
+  root.querySelector('[data-action="set-left-meta"]').addEventListener('click', () => setMeta('left'));
+  root.querySelector('[data-action="set-right-meta"]').addEventListener('click', () => setMeta('right'));
 
   // timer
-  root.querySelector('[data-action="set"]').addEventListener('click', () => {
-    const input = $(`#${stage}-time`).value;
-    timerSet(stage, input);
-  });
-  root.querySelector('[data-action="play"]').addEventListener('click', () => timerPlayFn(stage));
-  root.querySelector('[data-action="pause"]').addEventListener('click', () => timerPauseFn(stage));
-  root.querySelector('[data-action="reset"]').addEventListener('click', () => {
-    const input = $(`#${stage}-time`).value;
-    timerReset(stage, input);
-  });
+  root.querySelector('[data-action="set"]').addEventListener('click', timerSet);
+  root.querySelector('[data-action="play"]').addEventListener('click', timerPlay);
+  root.querySelector('[data-action="pause"]').addEventListener('click', timerPause);
+  root.querySelector('[data-action="reset"]').addEventListener('click', timerReset);
 
-  // score/LP buttons
-  root.addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-action]');
-    if (!btn) return;
-    const action = btn.dataset.action;
-
-    if (action === 'set-left-score') return setScore(stage, 'left');
-    if (action === 'set-right-score') return setScore(stage, 'right');
-    if (action === 'reset-left-score') return resetScore(stage, 'left');
-    if (action === 'reset-right-score') return resetScore(stage, 'right');
-
-    if (action === 'set-left-lp') return setLP(stage, 'left');
-    if (action === 'set-right-lp') return setLP(stage, 'right');
-    if (action === 'reset-left-lp') return resetLP(stage, 'left');
-    if (action === 'reset-right-lp') return resetLP(stage, 'right');
-  });
-}
+  // score / lp
+  root.querySelector('[data-action="set-left-score"]').addEventListener('click', () => setScore('left'));
+  root.querySelector('[data-action="set-right-score"]').addEventListener('click', () => setScore('right'));
+  root.querySelector('[data-action="reset-left-score"]').addEventListener('click', () => resetScore('left'));
+  root.querySelector('[data-action="reset-right-score"]').addEventListener('click', () => resetScore('right'));
+  root.querySelector('[data-action="set-left-lp"]').addEventListener('click', () => setLP('left'));
+  root.querySelector('[data-action="set-right-lp"]').addEventListener('click', () => setLP('right'));
+  root.querySelector('[data-action="reset-left-lp"]').addEventListener('click', () => resetLP('left'));
+  root.querySelector('[data-action="reset-right-lp"]').addEventListener('click', () => resetLP('right'));
+})();
