@@ -454,24 +454,34 @@ html[data-cards="hidden"] .brname-1 {
   height: 39px;
 }
 
-/* Hide everything except the card callouts */
+/* ===== SOLO MODE: only show the two card callouts ===== */
 html[data-cards="solo"] body {
-  background: transparent !important;
+  background: transparent !important; /* overlay-clean */
 }
 
-html[data-cards="solo"] .scoreboard,
-html[data-cards="solo"] .nameplate,
-html[data-cards="solo"] .lp,
-html[data-cards="solo"] .record,
-html[data-cards="solo"] .deck,
-html[data-cards="solo"] .flags,
-html[data-cards="solo"] .timer,
-html[data-cards="solo"] .phase,
-html[data-cards="solo"] .score {
+/* Hide everything under .gameplay except the card-wrapper */
+html[data-cards="solo"] .gameplay > * {
   display: none !important;
 }
-
-/* Force card callouts to be visible */
-html[data-cards="solo"] .card-wrapper {
+html[data-cards="solo"] .gameplay > .card-wrapper {
   display: block !important;
+}
+
+/* Ensure the cards actually render & can sit centered if needed */
+html[data-cards="solo"] .card-wrapper {
+  pointer-events: none;           /* click-through overlay, optional */
+}
+
+/* Optional: if you want to collapse any layout whitespace around cards */
+html[data-cards="solo"] .card-container.left,
+html[data-cards="solo"] .card-container.right {
+  margin: 0 !important;
+}
+
+/* ===== HIDDEN MODE polish from earlier (kept for completeness) ===== */
+/* When cards are hidden, hide flags and let names expand if your CSS uses them */
+html[data-cards="hidden"] .flag-1-icon,
+html[data-cards="hidden"] .flag-2-icon,
+html[data-cards="hidden"] [class^="flag-"][class$="-icon"] {
+  display: none !important;
 }
