@@ -453,3 +453,25 @@ html[data-cards="hidden"] .brname-1 {
   width: 296px;
   height: 39px;
 }
+
+/* Hide everything except the card callouts */
+html[data-cards="solo"] body {
+  background: transparent !important;
+}
+
+html[data-cards="solo"] .scoreboard,
+html[data-cards="solo"] .nameplate,
+html[data-cards="solo"] .lp,
+html[data-cards="solo"] .record,
+html[data-cards="solo"] .deck,
+html[data-cards="solo"] .flags,
+html[data-cards="solo"] .timer,
+html[data-cards="solo"] .phase,
+html[data-cards="solo"] .score {
+  display: none !important;
+}
+
+/* Force card callouts to be visible */
+html[data-cards="solo"] .card-wrapper {
+  display: block !important;
+}

@@ -4,6 +4,7 @@ const stage = (urlParams.get("stage") || "feature").toLowerCase();
 // NEW: cards=hidden|off|false|0  → hide card callouts
 const cardsParam = (urlParams.get("cards") || "").toLowerCase();
 const cardsHidden = ["hidden", "off", "false", "0"].includes(cardsParam);
+const cardsSolo   = cardsParam === "solo";
 
 let tableName, playerIds;
 switch (stage) {
@@ -18,4 +19,4 @@ switch (stage) {
     tableName = "featureScoreboard"; playerIds = [1, 2];
 }
 
-export { tableName, playerIds, stage, cardsHidden };
+export { tableName, playerIds, stage, cardsHidden, cardsSolo };
