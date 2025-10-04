@@ -1,6 +1,6 @@
 // scoreboard.js
 import { supabase } from './supabaseClient.js';
-import { tableName, playerIds, cardsHidden } from './config.js';
+import { tableName, playerIds, cardsHidden, cardsSolo } from './config.js';
 import { updateUI } from './uiUpdater.js';
 
 // Apply CSS toggle for hidden cards
