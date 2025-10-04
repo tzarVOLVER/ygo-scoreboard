@@ -8,6 +8,10 @@ if (cardsHidden) {
   document.documentElement.setAttribute('data-cards', 'hidden');
 }
 
+if (cardsSolo) {
+  document.documentElement.setAttribute('data-cards', 'solo');
+}
+
 // One-shot snapshot fetch
 async function fetchPlayers() {
   const { data, error } = await supabase
