@@ -2,107 +2,226 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <title>Yu-Gi-Oh! Card Search</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 2rem;
-            background: #f4f4f4;
-        }
+  <meta charset="UTF-8" />
+  <title>Yu-Gi-Oh! Card Search</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --gap: 1rem;
+    }
 
-        input {
-            padding: 0.5rem;
-            font-size: 1rem;
-            width: 300px;
-        }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background: #f4f4f4;
+      color: #111;
+    }
 
-        button {
-            padding: 0.5rem 1rem;
-            margin-left: 0.5rem;
-            font-size: 1rem;
-        }
+    .row {
+      display: flex;
+      align-items: center;
+      gap: var(--gap);
+      flex-wrap: wrap;
+    }
 
-        #result {
-            margin-top: 2rem;
-        }
+    input {
+      padding: 0.6rem 0.7rem;
+      font-size: 1rem;
+      width: 320px;
+      max-width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fff;
+    }
 
-        img {
-            max-width: 300px;
-            display: block;
-            margin-top: 1rem;
-        }
-    </style>
+    button {
+      padding: 0.6rem 1rem;
+      font-size: 1rem;
+      border: 0;
+      border-radius: 6px;
+      background: #111;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    button[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #result {
+      margin-top: 2rem;
+      background: #fff;
+      border: 1px solid #e7e7e7;
+      border-radius: 8px;
+      padding: 1rem;
+    }
+
+    img {
+      max-width: 320px;
+      width: 100%;
+      height: auto;
+      display: block;
+      margin-top: 1rem;
+      border-radius: 6px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .meta {
+      margin-top: 0.5rem;
+      color: #555;
+      font-size: 0.95rem;
+    }
+
+    .actions {
+      margin-top: 1rem;
+      display: flex;
+      gap: var(--gap);
+      flex-wrap: wrap;
+    }
+  </style>
 </head>
 
 <body>
-    <h1>Yu-Gi-Oh! Card Search</h1>
+  <h1>Yu-Gi-Oh! Card Search</h1>
 
-    <input type="text" id="cardNameInput" list="cardSuggestions" placeholder="Enter card name">
+  <div class="row">
+    <input type="text" id="cardNameInput" list="cardSuggestions" placeholder="Enter card name" />
     <datalist id="cardSuggestions"></datalist>
-    <button onclick="searchCard()">Search</button>
+    <button id="searchBtn" onclick="searchCard()">Search</button>
+    <button id="downloadBtn" disabled>Download Image</button>
+  </div>
 
-    <div id="result"></div>
+  <div id="result" aria-live="polite"></div>
 
-    <script>
-        // Load CSV and populate datalist
-        async function loadCardNames() {
-            try {
-                const response = await fetch("https://vzbwhvamfqkodiogwdww.supabase.co/storage/v1/object/public/testdata//cardnames.csv");
-                const csvText = await response.text();
-                const lines = csvText.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+  <script>
+    // --- State ---
+    let currentCard = null; // { name, code, imageUrl }
 
-                const datalist = document.getElementById("cardSuggestions");
-                lines.forEach(name => {
-                    const option = document.createElement("option");
-                    option.value = name;
-                    datalist.appendChild(option);
-                });
-            } catch (e) {
-                console.error("Failed to load card names:", e);
-            }
+    // --- Utilities ---
+    const safeFileName = (name, maxLen = 120) => {
+      // Replace non-alphanumerics with underscores; collapse repeats; trim length
+      const cleaned = name.replace(/[^a-z0-9]+/gi, "_").replace(/_+/g, "_").replace(/^_+|_+$/g, "");
+      return cleaned.substring(0, maxLen) || "card";
+    };
+
+    const inferExtension = (url, fallback = "jpg") => {
+      try {
+        // Try to read extension from URL path (ignore query)
+        const path = new URL(url).pathname;
+        const m = path.match(/\.([a-z0-9]+)$/i);
+        if (m) return m[1].toLowerCase();
+      } catch (_) { /* ignore */ }
+      return fallback;
+    };
+
+    // --- CSV -> datalist ---
+    async function loadCardNames() {
+      try {
+        const response = await fetch("https://vzbwhvamfqkodiogwdww.supabase.co/storage/v1/object/public/testdata//cardnames.csv");
+        const csvText = await response.text();
+        const lines = csvText.split("\n").map(l => l.trim()).filter(Boolean);
+
+        const datalist = document.getElementById("cardSuggestions");
+        for (const name of lines) {
+          const option = document.createElement("option");
+          option.value = name;
+          datalist.appendChild(option);
+        }
+      } catch (e) {
+        console.error("Failed to load card names:", e);
+      }
+    }
+
+    // --- Search ---
+    async function searchCard() {
+      const input = document.getElementById("cardNameInput");
+      const cardName = input.value.trim();
+      const resultDiv = document.getElementById("result");
+      const downloadBtn = document.getElementById("downloadBtn");
+
+      if (!cardName) {
+        resultDiv.innerHTML = "Please enter a card name.";
+        downloadBtn.disabled = true;
+        currentCard = null;
+        return;
+      }
+
+      resultDiv.textContent = "Searching...";
+
+      try {
+        const response = await fetch(`https://ygo-card.tzarnikolas.workers.dev/?name=${encodeURIComponent(cardName)}`);
+        const json = await response.json();
+        const card = json?.data?.[0];
+
+        if (!card) {
+          resultDiv.textContent = "Card not found.";
+          downloadBtn.disabled = true;
+          currentCard = null;
+          return;
         }
 
-        // Search logic
-        async function searchCard() {
-            const cardName = document.getElementById('cardNameInput').value.trim();
-            const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = 'Searching...';
+        currentCard = {
+          name: card.CardName || cardName,
+          code: card.CardCode || "",
+          imageUrl: card.ImageUrl
+        };
 
-            try {
-                const response = await fetch(`https://ygo-card.tzarnikolas.workers.dev/?name=${encodeURIComponent(cardName)}`);
-                const json = await response.json();
+        resultDiv.innerHTML = `
+          <strong>${currentCard.name}</strong>
+          ${currentCard.code ? `<div class="meta"><em>Card Code:</em> ${currentCard.code}</div>` : ""}
+          <img id="cardImage" src="${currentCard.imageUrl}" alt="${currentCard.name}">
+        `;
 
-                const card = json?.data?.[0];
+        downloadBtn.disabled = false;
+      } catch (error) {
+        console.error(error);
+        resultDiv.textContent = "Error fetching card data.";
+        downloadBtn.disabled = true;
+        currentCard = null;
+      }
+    }
 
-                if (!card) {
-                    resultDiv.innerHTML = 'Card not found.';
-                    return;
-                }
+    // --- Download with renamed filename ---
+    async function downloadImage(url, desiredName) {
+      // Fetch the image as a Blob and save with a forced filename
+      const res = await fetch(url, { mode: "cors" });
+      if (!res.ok) throw new Error(`Failed to fetch image: ${res.status}`);
+      const blob = await res.blob();
 
-                resultDiv.innerHTML = `
-      <strong>${card.CardName}</strong><br>
-      <em>Card Code:</em> ${card.CardCode}<br>
-      <img src="${card.ImageUrl}" alt="${card.CardName}">
-    `;
-            } catch (error) {
-                resultDiv.innerHTML = 'Error fetching card data.';
-                console.error(error);
-            }
-        }
+      const extFromType = (blob.type && blob.type.split("/")[1]) || null;
+      const extFromUrl = inferExtension(url);
+      const ext = (extFromType || extFromUrl || "jpg").replace(/[^a-z0-9]/gi, "");
 
+      const clean = safeFileName(desiredName);
+      const a = document.createElement("a");
+      const blobUrl = URL.createObjectURL(blob);
+      a.href = blobUrl;
+      a.download = `${clean}.${ext || "jpg"}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+    }
 
+    // --- Wire up buttons & Enter key ---
+    document.getElementById("cardNameInput").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") searchCard();
+    });
 
-        // Handle Enter key
-        document.getElementById('cardNameInput').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                searchCard();
-            }
-        });
+    document.getElementById("downloadBtn").addEventListener("click", async () => {
+      if (!currentCard) return;
+      try {
+        await downloadImage(currentCard.imageUrl, currentCard.name);
+      } catch (e) {
+        console.error("Download failed:", e);
+        alert("Couldn't download the image. Check console for details.");
+      }
+    });
 
-        // Load card names on startup
-        loadCardNames();
-    </script>
+    // --- Init ---
+    loadCardNames();
+  </script>
 </body>
 
 </html>
