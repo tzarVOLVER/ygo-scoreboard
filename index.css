@@ -17,6 +17,7 @@ body {
   font-size: 25px;
   color: #fff;
   font-family: Anybody, sans-serif;
+  user-select: none;
 }
 
 /* Player Elements */
@@ -28,6 +29,7 @@ body {
   align-items: center;
   height: 39px;
   width: 296px;
+  user-select: none;
 }
 
 .namebox {
@@ -38,6 +40,7 @@ body {
   display: block;
   position: absolute;
   font-family: 'Anybody', sans-serif;
+  user-select: none;
 }
 
 .brname-1 {
@@ -332,11 +335,13 @@ body {
 .card-container.left {
   left: 151px;
   top: 470px;
+  user-select: none;
 }
 
 .card-container.right {
   left: 1449px;
   top: 470px;
+  user-select: none;
 }
 
 /* Layout */
@@ -345,6 +350,7 @@ body {
   width: 321px;
   height: 468px;
   perspective: 1300px;
+  user-select: none;
 }
 
 /* Base card state */
@@ -354,6 +360,7 @@ body {
   position: relative;
   transform-style: preserve-3d;
   backface-visibility: hidden;
+  user-select: none;
 }
 
 /* Flip-in animation */
