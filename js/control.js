@@ -1,8 +1,8 @@
 // control.js
 import { supabase } from './supabaseClient.js';
 
-// Single-stage mapping (Bonus 2 only)
-const STAGE = { table: 'bonus2Scoreboard', ids: [5, 6] };
+// Single-stage mapping (Stage 3 / formerly Bonus 2)
+const STAGE = { table: 'Stage3Scoreboard', ids: [5, 6] };
 
 // --- Utilities ---
 function $(sel, root=document) { return root.querySelector(sel); }
