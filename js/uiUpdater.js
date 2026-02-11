@@ -14,7 +14,7 @@ import {
     stopTimer
 } from './timer.js';
 
-import { cardsHidden } from './config.js'; // ⬅️ read URL switch (?cards=hidden|off|false|0)
+import { cardsHidden } from './config.js';
 
 // If cards are hidden, treat both sides as already "ready" so no flip waits
 const imageReady = {
