@@ -51,30 +51,17 @@ function scheduleUpdate(id, row) {
 }
 
 
-// Realtime subscription: UPDATEs only
-// choose table + ids based on stage
-const stageMap = {
-  stage1: { table: 'Stage1Scoreboard', ids: [1, 2] },
-  stage2: { table: 'Stage2Scoreboard', ids: [3, 4] },
-  stage3: { table: 'Stage3Scoreboard', ids: [5, 6] },
-};
-
-const { table, ids } = stageMap[stageName]; // stageName = 'stage1' | 'stage2' | 'stage3'
-
-// 1) initial fetch
-await fetchPlayers();
-
-// 2) subscribe to ONLY the rows you care about
-const rowChannels = ids.map((id) =>
+// Row-level subscriptions (one per player row)
+const rowChannels = playerIds.map((id) =>
   supabase
-    .channel(`${table}-row-${id}`)
+    .channel(`${tableName}-row-${id}`)
     .on(
       'postgres_changes',
       {
         event: 'UPDATE',
         schema: 'public',
-        table,
-        filter: `id=eq.${id}`,
+        table: tableName,
+        filter: `id=eq.${id}`, // <-- subscribe to just this row
       },
       (payload) => {
         const row = payload?.new;
@@ -85,12 +72,15 @@ const rowChannels = ids.map((id) =>
     .subscribe()
 );
 
-// Optional: re-sync when tab becomes visible
+// Optional: re-sync when the tab becomes visible (helps after idle)
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') fetchPlayers();
 });
 
-// Optional: cleanup (if you ever swap stages or navigate SPA-style)
+// Kick off initial state load
+fetchPlayers();
+
+// Optional cleanup helper (useful in hot-reload / SPA situations)
 function unsubscribeRows() {
   rowChannels.forEach((ch) => supabase.removeChannel(ch));
 }
