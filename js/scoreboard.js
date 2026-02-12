@@ -50,7 +50,6 @@ function scheduleUpdate(id, row) {
   }
 }
 
-
 // Row-level subscriptions (one per player row)
 const rowChannels = playerIds.map((id) =>
   supabase
