@@ -50,36 +50,26 @@ function scheduleUpdate(id, row) {
   }
 }
 
-// Row-level subscriptions (one per player row)
-const rowChannels = playerIds.map((id) =>
-  supabase
-    .channel(`${tableName}-row-${id}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: tableName,
-        filter: `id=eq.${id}`, // <-- subscribe to just this row
-      },
-      (payload) => {
-        const row = payload?.new;
-        if (!row) return;
+// Realtime subscription: UPDATEs only
+supabase
+  .channel(`${tableName}-channel`)
+  .on(
+    'postgres_changes',
+    { event: 'UPDATE', schema: 'public', table: tableName },
+    (payload) => {
+      const row = payload?.new;
+      const id = row?.id;
+      if (id != null && playerIds.includes(id)) {
         scheduleUpdate(id, row);
       }
-    )
-    .subscribe()
-);
+    }
+  )
+  .subscribe();
 
-// Optional: re-sync when the tab becomes visible (helps after idle)
+
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') fetchPlayers();
 });
 
-// Kick off initial state load
+// Kick off
 fetchPlayers();
-
-// Optional cleanup helper (useful in hot-reload / SPA situations)
-function unsubscribeRows() {
-  rowChannels.forEach((ch) => supabase.removeChannel(ch));
-}
