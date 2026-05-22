@@ -158,7 +158,7 @@ async function setScore(side) {
   const val = toIntOrDefault($(`#bonus2-${side}-score`)?.value, 0);
   const { error } = await supabase.from(table).update({ score: val }).eq('id', id);
   if (error) { status(`Score (${side}) error: ${error.message}`); return; }
-  status(`Score (${side}) → ${val}`, true);
+  status(`Score (${side}) -> ${val}`, true);
 }
 async function resetScore(side) {
   const { table } = STAGE;
@@ -173,7 +173,7 @@ async function setLP(side) {
   const val = toIntOrDefault($(`#bonus2-${side}-lp`)?.value, 8000);
   const { error } = await supabase.from(table).update({ lifePoints: val }).eq('id', id);
   if (error) { status(`LP (${side}) error: ${error.message}`); return; }
-  status(`LP (${side}) → ${val}`, true);
+  status(`LP (${side}) -> ${val}`, true);
 }
 async function resetLP(side) {
   const { table } = STAGE;

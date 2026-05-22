@@ -1,7 +1,9 @@
 // scoreboard.js
-import { supabase } from './supabaseClient.js';
-import { tableName, playerIds, cardsHidden, cardsSolo } from './config.js';
+import { scoreboardApiUrl, cardsHidden, cardsSolo } from './config.js';
 import { updateUI } from './uiUpdater.js';
+
+const POLL_INTERVAL_MS = 500;
+const FETCH_TIMEOUT_MS = 5000;
 
 // Apply CSS toggle for hidden cards
 if (cardsHidden) {
@@ -12,19 +14,116 @@ if (cardsSolo) {
   document.documentElement.setAttribute('data-cards', 'solo');
 }
 
-// One-shot snapshot fetch
-async function fetchPlayers() {
-  const { data, error } = await supabase
-    .from(tableName)
-    .select('*')
-    .in('id', playerIds);
+function flagUrlFromCode(code) {
+  const cc = String(code || '').trim().toLowerCase();
+  return cc ? `https://flagcdn.com/h80/${cc}.png` : '';
+}
 
-  if (error) {
-    console.error('Error fetching players:', error);
-    return;
+function imageUrlFromPath(path) {
+  if (!path) return '';
+
+  try {
+    return new URL(path, scoreboardApiUrl).href;
+  } catch {
+    return String(path);
+  }
+}
+
+function formatPhaseText(phase) {
+  const normalized = String(phase || '').trim().toLowerCase();
+  if (!normalized) return '';
+
+  const labels = {
+    draw: 'DRAW PHASE',
+    standby: 'STANDBY PHASE',
+    main: 'MAIN PHASE',
+    main2: 'MAIN PHASE 2',
+    battle: 'BATTLE PHASE',
+    end: 'END PHASE',
+  };
+
+  return labels[normalized] || normalized.replace(/-/g, ' ').toUpperCase();
+}
+
+function normalizePhase(currentPhase) {
+  const phase = String(currentPhase || '').trim().toLowerCase();
+  const match = /^(blue|red)-(.+)$/.exec(phase);
+
+  if (match) {
+    const phaseText = formatPhaseText(match[2]);
+
+    return {
+      blue: match[1] === 'blue' ? phaseText : '',
+      red: match[1] === 'red' ? phaseText : '',
+    };
   }
 
-  data.forEach((row) => updateUI(row.id, row));
+  return {
+    blue: phase === 'siding' ? '' : formatPhaseText(phase),
+    red: '',
+  };
+}
+
+function normalizePlayer(player, stage, side, phases) {
+  const isBlue = side === 'blue';
+  const broadcastName = String(player?.broadcastName || '').trim();
+
+  return {
+    id: isBlue ? 1 : 2,
+    brName: broadcastName || player?.playerName || '',
+    record: player?.playerRecord ?? '',
+    deck: player?.deckType ?? '',
+    flagImgUrl: player?.flagImgUrl || flagUrlFromCode(player?.playerCountry),
+    score: isBlue ? stage?.scoreBlue : stage?.scoreRed,
+    lifePoints: isBlue ? stage?.lifePointsBlue : stage?.lifePointsRed,
+    phase: isBlue ? phases.blue : phases.red,
+    cardFlipped: isBlue ? stage?.cardFlippedBlue : stage?.cardFlippedRed,
+    cardHighlight: imageUrlFromPath(isBlue ? stage?.cardFilePathBlue : stage?.cardFilePathRed)
+      || player?.deckImageUrl
+      || '',
+    timerValue: stage?.timerValue,
+  };
+}
+
+function normalizeScoreboard(payload) {
+  const { playerBlue, playerRed, stage } = payload || {};
+  const phases = normalizePhase(stage?.currentPhase);
+
+  return [
+    normalizePlayer(playerBlue, stage, 'blue', phases),
+    normalizePlayer(playerRed, stage, 'red', phases),
+  ];
+}
+
+let activeFetch = null;
+
+async function fetchScoreboard() {
+  if (activeFetch) return;
+
+  const controller = new AbortController();
+  activeFetch = controller;
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(scoreboardApiUrl, {
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} ${response.statusText}`);
+    }
+
+    const payload = await response.json();
+    normalizeScoreboard(payload).forEach((row) => scheduleUpdate(row.id, row));
+  } catch (error) {
+    if (error.name !== 'AbortError') {
+      console.error('Error fetching scoreboard:', error);
+    }
+  } finally {
+    clearTimeout(timeoutId);
+    if (activeFetch === controller) activeFetch = null;
+  }
 }
 
 // --- Coalesce realtime updates per animation frame ---
@@ -50,26 +149,10 @@ function scheduleUpdate(id, row) {
   }
 }
 
-// Realtime subscription: UPDATEs only
-supabase
-  .channel(`${tableName}-channel`)
-  .on(
-    'postgres_changes',
-    { event: 'UPDATE', schema: 'public', table: tableName },
-    (payload) => {
-      const row = payload?.new;
-      const id = row?.id;
-      if (id != null && playerIds.includes(id)) {
-        scheduleUpdate(id, row);
-      }
-    }
-  )
-  .subscribe();
-
-
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') fetchPlayers();
+  if (document.visibilityState === 'visible') fetchScoreboard();
 });
 
 // Kick off
-fetchPlayers();
+fetchScoreboard();
+setInterval(fetchScoreboard, POLL_INTERVAL_MS);
