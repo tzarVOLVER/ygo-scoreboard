@@ -7,6 +7,8 @@ body {
   background: url("src/images/GAMEPLAY.png") no-repeat center center;
   background-size: 1920px 1080px;
   background-color:rgba(0, 0, 0, 0);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .gameplay {
@@ -18,6 +20,22 @@ body {
   font-size: 25px;
   color: #fff;
   font-family: Anybody, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gameplay *,
+.gameplay *::before,
+.gameplay *::after {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.gameplay img,
+.gameplay svg {
+  -webkit-user-drag: none;
+  user-drag: none;
 }
 
 /* Player Elements */
