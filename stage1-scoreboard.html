@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" data-cards="hidden">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Main Stage Scoreboard</title>
+  <link rel="stylesheet" href="index.css">
+  <style>
+    .deck-1, .deck-2 {
+      display: block;
+      top: 419px;
+      height: 28px;
+      fill: currentColor;
+    }
+  </style>
+</head>
+<body>
+  <main class="gameplay" aria-label="Main Stage scoreboard">
+    <svg class="brname-1 namebox" width="296" height="39" role="img" aria-label="Blue player name">
+      <text data-field="blueName" x="0" y="30"></text>
+    </svg>
+    <svg class="deck-1" width="325" height="28" role="img" aria-label="Blue decktype">
+      <text data-field="blueDeck" x="162.5" y="22" text-anchor="middle" font-weight="bold"></text>
+    </svg>
+    <svg class="brname-2 namebox" width="288" height="39" role="img" aria-label="Red player name">
+      <text data-field="redName" x="288" y="30" text-anchor="end"></text>
+    </svg>
+    <svg class="deck-2" width="325" height="28" role="img" aria-label="Red decktype">
+      <text data-field="redDeck" x="162.5" y="22" text-anchor="middle" font-weight="bold"></text>
+    </svg>
+  </main>
+  <script>
+    const storageKey = "ygo-scoreboard:stage1";
+    const fields = document.querySelectorAll("[data-field]");
+    const params = new URLSearchParams(window.location.search);
+
+    function render(values) {
+      for (const field of fields) {
+        const value = values?.[field.dataset.field];
+        field.textContent = typeof value === "string" ? value.trim() : "";
+        field.removeAttribute("textLength");
+        const width = field.ownerSVGElement.width.baseVal.value;
+        if (field.getComputedTextLength() > width) {
+          field.setAttribute("textLength", width);
+          field.setAttribute("lengthAdjust", "spacingAndGlyphs");
+        }
+      }
+    }
+
+    function renderSaved() {
+      try {
+        render(JSON.parse(localStorage.getItem(storageKey)));
+      } catch {
+        render({});
+      }
+    }
+
+    const hasFixedValues = [...fields].some(field => params.has(field.dataset.field));
+    if (hasFixedValues) {
+      render(Object.fromEntries(params));
+    } else {
+      renderSaved();
+      window.addEventListener("storage", event => {
+        if (event.key === storageKey || event.key === null) renderSaved();
+      });
+      window.addEventListener("pageshow", renderSaved);
+    }
+  </script>
+</body>
+</html>

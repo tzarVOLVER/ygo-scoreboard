@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Main Stage Data Control</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: system-ui, sans-serif;
+      background: #101318;
+      color: #f5f7fa;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px; }
+    main { max-width: 680px; margin: 0 auto; }
+    h1 { font-size: 1.5rem; margin: 0 0 20px; }
+    .players { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    fieldset {
+      min-width: 0;
+      margin: 0;
+      padding: 14px;
+      border: 1px solid #444b56;
+      border-radius: 8px;
+      background: #1b2027;
+    }
+    legend { padding: 0 6px; font-weight: 700; }
+    .blue { color: #48c5f7; }
+    .red { color: #ff709d; }
+    label { display: grid; gap: 5px; margin-bottom: 12px; }
+    label:last-child { margin-bottom: 0; }
+    input, button { font: inherit; }
+    input {
+      min-width: 0;
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #555d6a;
+      border-radius: 5px;
+      background: #101318;
+      color: inherit;
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 16px; }
+    button {
+      padding: 8px 12px;
+      border: 1px solid #555d6a;
+      border-radius: 5px;
+      background: #252c36;
+      color: inherit;
+      cursor: pointer;
+    }
+    button[type="submit"] { background: #92d7fa; color: #101318; font-weight: 700; }
+    a { color: #92d7fa; }
+    [role="status"] { min-height: 1.5em; color: #c9d1dc; }
+    @media (max-width: 480px) {
+      .players { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Main Stage Data Control</h1>
+    <form id="stage-data">
+      <div class="players">
+        <fieldset>
+          <legend class="blue">Blue</legend>
+          <label>Blue name <input name="blueName" maxlength="100"></label>
+          <label>Blue decktype <input name="blueDeck" maxlength="100"></label>
+        </fieldset>
+        <fieldset>
+          <legend class="red">Red</legend>
+          <label>Red name <input name="redName" maxlength="100"></label>
+          <label>Red decktype <input name="redDeck" maxlength="100"></label>
+        </fieldset>
+      </div>
+      <div class="actions">
+        <button type="submit">Apply</button>
+        <a href="stage1-scoreboard.html" target="_blank" rel="noopener">Open live display</a>
+        <button type="button" id="copy-link">Copy fixed display URL</button>
+      </div>
+    </form>
+    <p id="status" role="status"></p>
+    <div id="fixed-link" hidden>
+      <label>Fixed display URL <input id="url" type="text" readonly></label>
+    </div>
+  </main>
+  <script>
+    const storageKey = "ygo-scoreboard:stage1";
+    const form = document.getElementById("stage-data");
+    const status = document.getElementById("status");
+    const url = document.getElementById("url");
+    const fixedLink = document.getElementById("fixed-link");
+    let applied = Object.fromEntries(new FormData(form));
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey));
+      for (const key of Object.keys(applied)) {
+        if (typeof saved?.[key] === "string") {
+          form.elements.namedItem(key).value = saved[key];
+        }
+      }
+      applied = Object.fromEntries(new FormData(form));
+    } catch {
+      status.textContent = "Could not load saved Stage 1 data.";
+    }
+
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      applied = Object.fromEntries(
+        [...new FormData(form)].map(([key, value]) => [key, value.trim()])
+      );
+      fixedLink.hidden = true;
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(applied));
+        status.textContent = "Stage 1 values applied.";
+      } catch {
+        status.textContent = "Browser storage is unavailable. Use the fixed display URL.";
+      }
+    });
+
+    document.getElementById("copy-link").addEventListener("click", async () => {
+      const display = new URL("stage1-scoreboard.html", window.location.href);
+      display.search = new URLSearchParams(applied);
+      try {
+        await navigator.clipboard.writeText(display.href);
+        status.textContent = "Fixed display URL copied.";
+      } catch {
+        fixedLink.hidden = false;
+        url.value = display.href;
+        url.select();
+        status.textContent = "Copy the selected display URL.";
+      }
+    });
+  </script>
+</body>
+</html>
