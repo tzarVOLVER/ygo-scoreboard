@@ -8,7 +8,7 @@
   <style>
     .stage-title {
       position: absolute;
-      top: 29px;
+      top: 27px;
       left: calc(50% - 140px);
       fill: currentColor;
       font-size: 26px;
@@ -24,8 +24,8 @@
 </head>
 <body>
   <main class="gameplay" aria-label="Main Stage scoreboard">
-    <svg class="stage-title" width="280" height="32" role="img" aria-label="Title">
-      <text data-field="title" x="140" y="25" text-anchor="middle"></text>
+    <svg class="stage-title" width="280" height="36" role="img" aria-label="Title">
+      <text data-field="title" x="140" y="18" text-anchor="middle" dominant-baseline="central"></text>
     </svg>
     <svg class="brname-1 namebox" width="296" height="39" role="img" aria-label="Blue player name">
       <text data-field="blueName" x="0" y="30"></text>
@@ -54,6 +54,12 @@
         if (field.getComputedTextLength() > width) {
           field.setAttribute("textLength", width);
           field.setAttribute("lengthAdjust", "spacingAndGlyphs");
+        }
+        if (field.dataset.field === "title" && field.textContent) {
+          const bounds = field.getBBox();
+          const dx = width / 2 - (bounds.x + bounds.width / 2);
+          const dy = field.ownerSVGElement.height.baseVal.value / 2 - (bounds.y + bounds.height / 2);
+          field.setAttribute("transform", "translate(" + dx + " " + dy + ")");
         }
       }
     }
