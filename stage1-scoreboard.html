@@ -6,6 +6,14 @@
   <title>Main Stage Scoreboard</title>
   <link rel="stylesheet" href="index.css">
   <style>
+    .stage-title {
+      position: absolute;
+      top: 29px;
+      left: calc(50% - 140px);
+      fill: currentColor;
+      font-size: 26px;
+      font-weight: 800;
+    }
     .deck-1, .deck-2 {
       display: block;
       top: 419px;
@@ -16,6 +24,9 @@
 </head>
 <body>
   <main class="gameplay" aria-label="Main Stage scoreboard">
+    <svg class="stage-title" width="280" height="32" role="img" aria-label="Title">
+      <text data-field="title" x="140" y="25" text-anchor="middle"></text>
+    </svg>
     <svg class="brname-1 namebox" width="296" height="39" role="img" aria-label="Blue player name">
       <text data-field="blueName" x="0" y="30"></text>
     </svg>
